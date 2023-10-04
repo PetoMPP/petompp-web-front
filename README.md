@@ -49,6 +49,9 @@ Frontend doesn't restrict unregistered users from trying to update the resources
 It also features a kind of decent UI that allows to quickly switch between resources and languages,
 with prompts in place to prevent you from losing any unsaved changes.
 
+The editor is also capable of adding images from users to the text by uploading them to blob storage.
+It is implemented as a dragdrop and onpaste events, in the future there'll be the way do to such uploads from mobile.
+
 ## Feedback
 
 I am very fresh in the world of the web and any feedback, issues and overall thoughts are more then welcome and I'm happy to hear them all :)
