@@ -4,6 +4,19 @@ on:
   push: 
     branches:
       - 'release/**'
+    paths:
+      - 'src/**'
+      - '.github/workflows/**'
+      - 'img/**'
+      - 'locales/**'
+      - 'index.html'
+      - 'dockerfile'
+      - 'cargo.toml'
+      - 'cargo.lock'
+      - 'Trunk.toml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tailwind.config.js'
 
 env:
   image_name: ${{ secrets.REGISTRY_NAME }}/peto-main-front
