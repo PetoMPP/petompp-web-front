@@ -1,6 +1,7 @@
 use crate::pages::{
     about::About,
     admin::{admin_panel::AdminPanel, user_management::UserManagement},
+    blog::Blog,
     contact::Contact,
     editor::Editor,
     home::Home,
@@ -19,6 +20,8 @@ pub enum Route {
     Home,
     #[at("/projects")]
     Projects,
+    #[at("/blog")]
+    Blog,
     #[at("/about")]
     About,
     #[at("/contact")]
@@ -59,6 +62,7 @@ pub fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! {<Home />},
         Route::Projects => html! {<Projects />},
+        Route::Blog => html! {<Blog />},
         Route::About => html! {<About />},
         Route::Contact => html! {<Contact />},
         Route::Login => html! {<Login />},

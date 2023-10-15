@@ -8,3 +8,4 @@ pub mod not_found;
 pub mod page_base;
 pub mod projects;
 pub mod register;
+pub mod blog;
