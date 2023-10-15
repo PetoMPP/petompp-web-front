@@ -19,7 +19,6 @@ Username: Username
 TypeUsername: Type your username..
 Password: Password
 TypePassword: Type your password..
-# AdminPanel: # Make editable
 UserManagement: User Management
 Id: ID
 Name: Name
@@ -33,6 +32,7 @@ Edit: Edit
 Editor: Editor
 Preview: Preview
 SaveDraft: Save Draft
+Blog: Blog
 # Errors
 E_Auth_MissingClaim: Authentication failed. Missing claim "%{0}".
 E_Auth_InvalidFormat: Authentication failed. Invalid calim format "%{0}".
