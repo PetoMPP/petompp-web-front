@@ -31,16 +31,20 @@ pub fn editor(props: &EditorProps) -> Html {
     let (res_store, res_dispatch) = use_store::<ResourceStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let error_state = use_state_eq(|| None);
+    let should_get_res = use_mut_ref(|| true);
     let preview = use_state_eq(|| false);
     let state = use_state_eq(String::new);
     let reskey = props.reskey.clone();
-    use_effect_deps!(|state, reskey, store, error_state| {
+    use_effect_deps!(|state, reskey, store, error_state, should_get_res| {
         match store.get_state(&reskey) {
             Some(s) => state.set(s.clone()),
             None => match res_store.get_state(&reskey) {
                 Some(s) => state.set(s.clone()),
                 None => state.set(String::new()),
             },
+        }
+        if !*should_get_res.borrow() {
+            return;
         }
         spawn_local(async move {
             match Client::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await {
@@ -51,7 +55,10 @@ pub fn editor(props: &EditorProps) -> Html {
                         });
                     }
                 }
-                Err(e) => error_state.set(Some(e)),
+                Err(e) => {
+                    *should_get_res.borrow_mut() = false;
+                    error_state.set(Some(e));
+                }
             }
         });
     });

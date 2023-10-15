@@ -72,7 +72,7 @@ pub mod macros {
                     });
                     return html! { <Redirect<Route> to={Route::Login} />};
                 }
-                show_error(error.to_string(), $redirect);
+                show_error(error.to_string(), $redirect, Some($error.clone()));
             }
         };
     }
