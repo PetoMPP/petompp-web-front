@@ -1,7 +1,7 @@
 use super::atoms::{control::Control, editor::Editor as EditorInner};
 use crate::{
     api::client::Client,
-    components::editor::atoms::editor::save_editor_state,
+    components::organisms::editor::atoms::editor::save_editor_state,
     data::{
         editor::EditorStore,
         locales::{LocalesStore, TK},
