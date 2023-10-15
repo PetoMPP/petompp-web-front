@@ -1,11 +1,18 @@
+use crate::api::client::Client;
+use crate::data::locales::{LocalesStore, TK};
+use crate::data::resources::{Key, ResourceStore};
+use crate::data::session::SessionStore;
+use crate::models::user::Role;
 use crate::{
     router::{AdminRoute, Route},
     use_effect_deps,
 };
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::Element;
+use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::{prelude::*, Routable};
+use yewdux::prelude::use_store;
 
 const ID: &str = "markdown-display";
 
@@ -53,6 +60,55 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
         <div {class} id={ID}>
             {Html::VRef(div.into())}
         </div>
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct EditableProps {
+    pub reskey: String,
+}
+
+#[function_component(Editable)]
+pub fn editable(props: &EditableProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
+    let (session_store, _) = use_store::<SessionStore>();
+    let (res_store, res_dispatch) = use_store::<ResourceStore>();
+    let reskey = Key {
+        reskey: props.reskey.clone(),
+        lang: locales_store.curr.key().to_string(),
+    };
+    let navigator = use_navigator().unwrap();
+    let edit_onclick = {
+        let reskey = reskey.clone();
+        Callback::from(move |_| {
+            navigator.push(&Route::Editor {
+                key: reskey.reskey.clone(),
+                lang: reskey.lang.clone(),
+            });
+        })
+    };
+    let edit_class = match &session_store.user {
+        Some(u) if u.role == Role::Admin => {
+            "btn absolute top-5 right-5 btn-accent btn-xs btn-outline"
+        }
+        _ => "hidden",
+    };
+    let markdown = res_store.get_state(&reskey).cloned().unwrap_or_default();
+    spawn_local(async move {
+        if let Ok(md) = Client::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await {
+            if res_store.get_state(&reskey) != Some(&md) {
+                res_dispatch.reduce_mut(|store| {
+                    store.add_or_update_state(&reskey, md);
+                });
+            }
+        }
+    });
+
+    html! {
+        <>
+        <button class={edit_class} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
+        <Markdown {markdown} interactive={Some(())} allowhtml={true}/>
+        </>
     }
 }
 
