@@ -1,4 +1,5 @@
 use deref_derive::{Deref, DerefMut};
+use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlDialogElement;
 use yew::prelude::*;
@@ -121,7 +122,11 @@ pub fn error_modal() -> Html {
     }
 }
 
-pub fn show_error(msg: impl Into<String>, redirect: bool) {
+pub fn show_error<T: 'static>(
+    msg: impl Into<String>,
+    redirect: bool,
+    error_state: Option<UseStateHandle<Option<T>>>,
+) {
     let msg: String = msg.into();
     let modal: HtmlDialogElement = web_sys::window()
         .unwrap()
@@ -158,6 +163,15 @@ pub fn show_error(msg: impl Into<String>, redirect: bool) {
     redirect_btn
         .set_attribute("class", redirect_btn_class)
         .unwrap();
+    if let Some(error_state) = error_state {
+        let cb = Closure::wrap(Box::new(move || error_state.set(None)) as Box<dyn FnMut()>);
+        btn.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
+            .unwrap();
+        redirect_btn
+            .add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
+            .unwrap();
+        cb.forget();
+    }
     modal.show_modal().unwrap();
 }
 
