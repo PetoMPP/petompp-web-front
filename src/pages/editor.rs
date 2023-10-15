@@ -1,4 +1,4 @@
-use crate::components::editor::editor::Editor as EditorInner;
+use crate::components::organisms::editor::editor::Editor as EditorInner;
 use crate::data::resources::Key;
 use crate::pages::page_base::PageBase;
 use yew::prelude::*;

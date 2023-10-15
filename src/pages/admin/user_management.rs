@@ -1,5 +1,5 @@
 use crate::{
-    components::admin::user_manager::UserManager,
+    components::organisms::admin::user_manager::UserManager,
     data::{
         locales::{LocalesStore, TK},
         session::SessionStore,
