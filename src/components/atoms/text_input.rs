@@ -26,7 +26,7 @@ pub fn text_input(props: &TextInputProps) -> Html {
             <span class={span_class}>{&props.label}</span>
         </label>
         <input class={input_class} type={props.itype.clone()} placeholder={props.placeholder.clone()} autocomplete={props.autocomplete.clone()} oninput={props.onchange.clone()} />
-        <span class={"text-error mt-1"}>{if let Some(e) = &props.error {e.clone() } else { "".to_string() }}</span>
+        <span class={"text-error mt-1"}>{props.error.clone().unwrap_or_default()}</span>
         </>
     }
 }
