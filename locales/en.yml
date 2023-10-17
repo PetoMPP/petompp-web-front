@@ -33,6 +33,8 @@ Editor: Editor
 Preview: Preview
 SaveDraft: Save Draft
 Blog: Blog
+Created: Created
+Updated: Updated
 # Errors
 E_Auth_MissingClaim: Authentication failed. Missing claim "%{0}".
 E_Auth_InvalidFormat: Authentication failed. Invalid calim format "%{0}".

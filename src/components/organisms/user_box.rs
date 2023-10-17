@@ -10,6 +10,7 @@ use crate::{
     },
     models::user::{Role, User},
     router::Route,
+    utils::style::get_svg_bg_mask_style,
 };
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -43,10 +44,9 @@ fn login_button() -> Html {
         close_menu();
         navigator.push(&Route::Login);
     });
-    let style = "-webkit-mask: url(/img/ui/login.svg) no-repeat center;mask: url(/img/ui/login.svg) no-repeat center;";
     html! {
         <div class={"btn btn-secondary p-1"} {onclick}>
-            <a class={"aspect-square h-full bg-secondary-content"} {style}/>
+            <a class={"aspect-square h-full bg-secondary-content"} style={get_svg_bg_mask_style("/img/ui/login.svg")}/>
         </div>
     }
 }
@@ -57,7 +57,6 @@ fn logout_button() -> Html {
     let (_, dispatch) = use_store::<ModalStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let navigator = use_navigator().unwrap();
-    let style = "-webkit-mask: url(/img/ui/logout.svg) no-repeat center;mask: url(/img/ui/logout.svg) no-repeat center;";
     let onclick = async_event!(|session_dispatch, navigator| {
         close_menu();
         session_dispatch.reduce(|_| SessionStore::default().into());
@@ -76,7 +75,7 @@ fn logout_button() -> Html {
     );
     html! {
         <div class={"btn btn-warning p-1"} {onclick}>
-            <a class={"aspect-square h-full bg-warning-content"} {style}/>
+            <a class={"aspect-square h-full bg-warning-content"} style={get_svg_bg_mask_style("/img/ui/logout.svg")}/>
         </div>
     }
 }
@@ -88,10 +87,9 @@ fn register_button() -> Html {
         close_menu();
         navigator.push(&Route::Register);
     });
-    let style = "-webkit-mask: url(/img/ui/register.svg) no-repeat center;mask: url(/img/ui/register.svg) no-repeat center;";
     html! {
         <div class={"btn btn-accent p-1"} {onclick}>
-            <a class={"aspect-square h-full bg-accent-content"} {style}/>
+            <a class={"aspect-square h-full bg-accent-content"} style={get_svg_bg_mask_style("/img/ui/register.svg")}/>
         </div>
     }
 }

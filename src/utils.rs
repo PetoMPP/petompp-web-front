@@ -94,3 +94,9 @@ pub mod ext {
         }
     }
 }
+
+pub mod style {
+    pub fn get_svg_bg_mask_style(path: &str) -> String {
+        format!("-webkit-mask: url({}) no-repeat center;mask: url({}) no-repeat center;", path, path)
+    }
+}
