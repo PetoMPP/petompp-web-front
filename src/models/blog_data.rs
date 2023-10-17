@@ -1,22 +1,23 @@
-use serde::{Deserialize, Serialize};
 use super::tag::Tags;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BlogMetaData {
     pub title: String,
     pub tags: Tags,
-    pub created: String,
-    pub updated: String,
+    pub created: DateTime<Utc>,
+    pub updated: DateTime<Utc>,
     pub image: Option<String>,
 }
 
 impl BlogMetaData {
-    pub fn new(title: impl ToString, tags: Tags, created: impl ToString) -> Self {
+    pub fn new(title: impl ToString, tags: Tags, created: DateTime<Utc>) -> Self {
         Self {
             title: title.to_string(),
             tags,
-            created: created.to_string(),
-            updated: created.to_string(),
+            created: created.clone(),
+            updated: created,
             image: Default::default(),
         }
     }
@@ -30,6 +31,9 @@ pub struct BlogSummaryData {
 
 impl BlogSummaryData {
     pub fn from_meta(meta: BlogMetaData, summary: impl ToString) -> Self {
-        Self { meta, summary: summary.to_string() }
+        Self {
+            meta,
+            summary: summary.to_string(),
+        }
     }
 }

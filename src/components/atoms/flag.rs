@@ -58,6 +58,50 @@ impl TryFrom<String> for Country {
     }
 }
 
+impl timeago::Language for Country {
+    fn too_low(&self) -> &'static str {
+        match self {
+            Country::UnitedKingdom => timeago::languages::english::English.too_low(),
+            Country::Poland => timeago::languages::polish::Polish.too_low(),
+        }
+    }
+
+    fn too_high(&self) -> &'static str {
+        match self {
+            Country::UnitedKingdom => timeago::languages::english::English.too_high(),
+            Country::Poland => timeago::languages::polish::Polish.too_high(),
+        }
+    }
+
+    fn ago(&self) -> &'static str {
+        match self {
+            Country::UnitedKingdom => timeago::languages::english::English.ago(),
+            Country::Poland => timeago::languages::polish::Polish.ago(),
+        }
+    }
+
+    fn get_word(&self, tu: timeago::TimeUnit, x: u64) -> &'static str {
+        match self {
+            Country::UnitedKingdom => timeago::languages::english::English.get_word(tu, x),
+            Country::Poland => timeago::languages::polish::Polish.get_word(tu, x),
+        }
+    }
+
+    fn clone_boxed(&self) -> timeago::BoxedLanguage {
+        match self {
+            Country::UnitedKingdom => timeago::languages::english::English.clone_boxed(),
+            Country::Poland => timeago::languages::polish::Polish.clone_boxed(),
+        }
+    }
+
+    fn place_ago_before(&self) -> bool {
+        match self {
+            Country::UnitedKingdom => timeago::languages::english::English.place_ago_before(),
+            Country::Poland => timeago::languages::polish::Polish.place_ago_before(),
+        }
+    }
+}
+
 #[function_component(Flag)]
 pub fn flag(props: &FlagProps) -> Html {
     html! {
