@@ -1,3 +1,4 @@
+pub mod date_display;
 pub mod flag;
 pub mod link;
 pub mod logo;

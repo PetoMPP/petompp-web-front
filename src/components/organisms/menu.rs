@@ -2,6 +2,7 @@ use crate::{
     components::organisms::user_box::UserBox,
     data::locales::{LocalesStore, TK},
     router::Route,
+    utils::style::get_svg_bg_mask_style,
 };
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
@@ -32,13 +33,12 @@ pub fn close_menu() {
 
 #[function_component(MenuButton)]
 fn menu_button() -> Html {
-    let style = "-webkit-mask: url(/img/ui/menu.svg) no-repeat center;mask: url(/img/ui/menu.svg) no-repeat center;";
     html! {
         <>
         <input id={"menu-drawer"} type={"checkbox"} class={"drawer-toggle"} />
         <div class={"drawer-content"}>
             <label for={"menu-drawer"} class={"btn btn-outline btn-primary btn-square hover:bg-primary p-1 drawer-button"}>
-                <div class={"w-10 h-10 bg-primary hover:bg-primary-content"} {style}/>
+                <div class={"w-10 h-10 bg-primary hover:bg-primary-content"} style={get_svg_bg_mask_style("/img/ui/menu.svg")}/>
             </label>
         </div>
         </>

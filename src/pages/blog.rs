@@ -4,6 +4,8 @@ use crate::{
     components::{atoms::markdown::Editable, organisms::blog::blog_summary::BlogSummary},
     pages::page_base::PageBase,
 };
+use chrono::Utc;
+use rand::Rng;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -11,57 +13,15 @@ use yew_router::prelude::*;
 pub fn blog() -> Html {
     let location = use_location().unwrap();
     let tags = location.query::<Tags>();
-    let posts = vec![
-        BlogSummaryData::from_meta(
-            BlogMetaData::new(
-                "Post 1",
-                Tags::from(vec![
-                    Tag {
-                        tag: "tag1".to_string(),
-                    },
-                    Tag {
-                        tag: "tag2".to_string(),
-                    },
-                ]),
-                chrono::Utc::now().to_rfc3339(),
-            ),
-            "This is the first post in the blog. It is about tag1 and tag2.",
-        ),
-        BlogSummaryData::from_meta(
-            BlogMetaData::new(
-                "Post 2",
-                Tags::from(vec![
-                    Tag {
-                        tag: "tag2".to_string(),
-                    },
-                    Tag {
-                        tag: "tag3".to_string(),
-                    },
-                ]),
-                chrono::Utc::now().to_rfc3339(),
-            ),
-            "This is the second post in the blog. It is about tag2 and tag3.",
-        ),
-        BlogSummaryData::from_meta(
-            BlogMetaData::new(
-                "Post 3",
-                Tags::from(vec![
-                    Tag {
-                        tag: "tag3".to_string(),
-                    },
-                    Tag {
-                        tag: "tag4".to_string(),
-                    },
-                ]),
-                chrono::Utc::now().to_rfc3339(),
-            ),
-            "This is the third post in the blog. It is about tag3 and tag4.",
-        ),
-    ];
+    let posts = get_posts(4);
     let posts = match tags {
         Ok(tags) => posts
             .iter()
-            .filter(|summary| tags.tags().iter().any(|t| summary.meta.tags.tags().contains(&t)))
+            .filter(|summary| {
+                tags.tags()
+                    .iter()
+                    .any(|t| summary.meta.tags.tags().contains(&t))
+            })
             .collect::<Vec<_>>(),
         Err(_) => posts.iter().collect::<Vec<_>>(),
     };
@@ -81,4 +41,39 @@ pub fn blog() -> Html {
         </div>
         </PageBase>
     }
+}
+
+fn get_posts(count: usize) -> Vec<BlogSummaryData> {
+    let mut rand = rand::thread_rng();
+    (1..count + 1)
+        .into_iter()
+        .map(|n| {
+            BlogSummaryData::from_meta(
+                BlogMetaData::new(
+                    format!("Post {}", n),
+                    Tags::from(vec![
+                        Tag {
+                            tag: format!("tag{}", n),
+                        },
+                        Tag {
+                            tag: format!("tag{}", n + 1),
+                        },
+                    ]),
+                    Utc::now()
+                        .checked_sub_signed(
+                            chrono::Duration::days(rand.gen_range(0..n as i64))
+                                + chrono::Duration::hours(rand.gen_range(0..23 as i64))
+                                + chrono::Duration::minutes(rand.gen_range(0..59 as i64))
+                                + chrono::Duration::seconds(rand.gen_range(0..59 as i64)),
+                        )
+                        .unwrap(),
+                ),
+                format!(
+                    "This is a post in the blog. It is about tag{} and tag{}.",
+                    n,
+                    n + 1
+                ),
+            )
+        })
+        .collect::<Vec<_>>()
 }
