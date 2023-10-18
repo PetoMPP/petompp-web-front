@@ -1,4 +1,4 @@
-use crate::api::client::Client;
+use crate::api::client::ApiClient;
 use crate::data::locales::{LocalesStore, TK};
 use crate::data::resources::{Key, ResourceStore};
 use crate::data::session::SessionStore;
@@ -95,7 +95,7 @@ pub fn editable(props: &EditableProps) -> Html {
     };
     let markdown = res_store.get_state(&reskey).cloned().unwrap_or_default();
     spawn_local(async move {
-        if let Ok(md) = Client::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await {
+        if let Ok(md) = ApiClient::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await {
             if res_store.get_state(&reskey) != Some(&md) {
                 res_dispatch.reduce_mut(|store| {
                     store.add_or_update_state(&reskey, md);
