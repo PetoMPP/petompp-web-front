@@ -1,6 +1,6 @@
 use super::atoms::{control::Control, editor::Editor as EditorInner};
 use crate::{
-    api::client::Client,
+    api::client::ApiClient,
     components::organisms::editor::atoms::editor::save_editor_state,
     data::{
         editor::EditorStore,
@@ -47,7 +47,7 @@ pub fn editor(props: &EditorProps) -> Html {
             return;
         }
         spawn_local(async move {
-            match Client::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await {
+            match ApiClient::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await {
                 Ok(val) => {
                     if res_store.get_state(&reskey) != Some(&val) {
                         res_dispatch.reduce_mut(|store| {

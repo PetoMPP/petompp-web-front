@@ -1,5 +1,4 @@
 use crate::{
-    api::client::Client,
     async_event,
     components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
@@ -7,7 +6,7 @@ use crate::{
         session::SessionStore,
     },
     handle_api_error,
-    models::user::User,
+    models::user::User, api::client::ApiClient,
 };
 use yew::{platform::spawn_local, prelude::*};
 use yewdux::prelude::*;
@@ -29,7 +28,7 @@ pub fn user_manager() -> Html {
         let error_state = error_state.clone();
         let user_data = user_data.clone();
         spawn_local(async move {
-            match Client::get_users(&token).await {
+            match ApiClient::get_users(&token).await {
                 Ok(users) => user_data.set(users),
                 Err(error) => error_state.set(Some(error)),
             };
@@ -82,7 +81,7 @@ fn activate_button(props: &UserRowProps) -> Html {
     let error_state = use_state_eq(|| None);
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|props, token, error_state| {
-        match Client::activate_user(&token, props.user.id).await {
+        match ApiClient::activate_user(&token, props.user.id).await {
             Ok(()) => props.reload.emit(()),
             Err(error) => error_state.set(Some(error)),
         }
@@ -121,7 +120,7 @@ fn delete_button(props: &UserRowProps) -> Html {
     let error_state = use_state_eq(|| None);
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|props, token, error_state| {
-        match Client::delete_user(&token, props.user.id).await {
+        match ApiClient::delete_user(&token, props.user.id).await {
             Ok(()) => props.reload.emit(()),
             Err(error) => error_state.set(Some(error)),
         }

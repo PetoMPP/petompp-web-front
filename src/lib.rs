@@ -1,5 +1,5 @@
 use crate::{
-    api::client::Client,
+    api::client::LocalClient,
     components::{
         atoms::modal::{ErrorModal, Modal},
         organisms::header::Header,
@@ -26,7 +26,7 @@ pub fn app() -> Html {
     if !locale_store.is_loaded(locale_store.curr) || error_state.is_some() {
         let locale_dispatch = locale_dispatch.clone();
         spawn_local(async move {
-            match Client::get_locale(locale_store.curr.key()).await {
+            match LocalClient::get_locale(locale_store.curr.key()).await {
                 Ok(data) => {
                     locale_dispatch.reduce_mut(|l| l.load(locale_store.curr, data));
                 }

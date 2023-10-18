@@ -1,5 +1,7 @@
 use super::error::ApiError;
-use crate::models::{credentials::Credentials, resource_data::ResourceData, user::User};
+use crate::models::{
+    blog_data::BlogMetaData, credentials::Credentials, resource_data::ResourceData, user::User,
+};
 use reqwasm::http::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
@@ -55,7 +57,7 @@ impl<T: DeserializeOwned> Response<T> {
     }
 }
 
-pub struct Client;
+pub struct ApiClient;
 lazy_static::lazy_static! {
     static ref API_URL: String = match std::option_env!("API_URL").unwrap_or_default() {
         url if url.ends_with('/') => url.to_string(),
@@ -73,8 +75,8 @@ pub struct LoginResponse {
     pub user: User,
 }
 
-impl Client {
-    fn get_api_url(path: &str) -> String {
+impl ApiClient {
+    fn get_url(path: &str) -> String {
         format!("{}{}", *API_URL, path)
     }
 
@@ -84,7 +86,7 @@ impl Client {
         token: Option<&str>,
         body: Option<&impl Serialize>,
     ) -> Result<R, RequestError> {
-        let mut request = Request::new(Self::get_api_url(path).as_str()).method(method);
+        let mut request = Request::new(Self::get_url(path).as_str()).method(method);
         if let Some(token) = token {
             request = request.header("Authorization", format!("Bearer {}", token).as_str());
         }
@@ -184,6 +186,51 @@ impl Client {
         .map(|_: ResourceData| ())
     }
 
+    pub async fn upload_img(
+        token: &str,
+        img: web_sys::File,
+        folder: &str,
+    ) -> Result<String, RequestError> {
+        let resp =
+            Request::new(Self::get_url(format!("api/v1/img/?folder={}", folder).as_str()).as_str())
+                .method(Method::PUT)
+                .header("Authorization", format!("Bearer {}", token).as_str())
+                .body(img)
+                .send()
+                .await
+                .map_err(|e| RequestError::Network(e.to_string()))?;
+        match Response::<String>::from_response(resp).await? {
+            Response::Success(filename) => {
+                Ok(format!("{}{}/{}", *AZURE_STORAGE_URL, folder, filename))
+            }
+            Response::Error(s, e) => Err(RequestError::Endpoint(s, e)),
+        }
+    }
+
+    pub async fn get_posts_meta() -> Result<Vec<BlogMetaData>, RequestError> {
+        Self::send_json(
+            Method::GET,
+            "api/v1/blog/meta/all",
+            None,
+            Option::<&String>::None,
+        )
+        .await
+    }
+
+    pub async fn get_post_meta(id: &str) -> Result<BlogMetaData, RequestError> {
+        Self::send_json(
+            Method::GET,
+            format!("api/v1/blog/meta/{}", id).as_str(),
+            None,
+            Option::<&String>::None,
+        )
+        .await
+    }
+}
+
+pub struct LocalClient;
+
+impl LocalClient {
     pub async fn get_locale(lang: &str) -> Result<HashMap<String, String>, RequestError> {
         let resp = Request::new(format!("/locales/{}.yml", lang).as_str())
             .method(Method::GET)
@@ -198,25 +245,24 @@ impl Client {
         serde_yaml::from_slice::<HashMap<String, String>>(&body)
             .map_err(|e| RequestError::Parse(e.to_string()))
     }
+}
 
-    pub async fn upload_img(
-        token: &str,
-        img: web_sys::File,
-        folder: &str,
-    ) -> Result<String, RequestError> {
-        let resp = Request::new(
-            Self::get_api_url(format!("api/v1/img/?folder={}", folder).as_str()).as_str(),
-        )
-        .method(Method::PUT)
-        .header("Authorization", format!("Bearer {}", token).as_str())
-        .body(img)
-        .send()
-        .await
-        .map_err(|e| RequestError::Network(e.to_string()))?;
+pub struct BlobClient;
+
+impl BlobClient {
+    fn get_url(filename: &str) -> String {
+        format!("{}{}", *AZURE_STORAGE_URL, filename)
+    }
+
+    pub async fn get_post_content(filename: &str) -> Result<String, RequestError> {
+        let resp =
+            Request::new(Self::get_url(format!("blog/{}", filename).as_str()).as_str())
+                .method(Method::GET)
+                .send()
+                .await
+                .map_err(|e| RequestError::Network(e.to_string()))?;
         match Response::<String>::from_response(resp).await? {
-            Response::Success(filename) => {
-                Ok(format!("{}{}/{}", *AZURE_STORAGE_URL, folder, filename))
-            }
+            Response::Success(content) => Ok(content),
             Response::Error(s, e) => Err(RequestError::Endpoint(s, e)),
         }
     }
