@@ -6,7 +6,6 @@ on:
       - 'release/**'
     paths:
       - 'src/**'
-      - '.github/workflows/**'
       - 'img/**'
       - 'locales/**'
       - 'index.html'
