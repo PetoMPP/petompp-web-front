@@ -1,10 +1,13 @@
-use crate::api::error::{
-    validation::{Error as ValidationError, UsernameError},
-    ApiError as AppError,
+use crate::api::{
+    client::ApiClient,
+    error::{
+        validation::{Error as ValidationError, UsernameError},
+        ApiError as AppError,
+    },
 };
 use crate::components::atoms::text_input::TextInput;
 use crate::{
-    api::{self, client::RequestError},
+    api::client::RequestError,
     async_event,
     components::atoms::modal::show_error,
     data::locales::{LocalesStore, TK},
@@ -61,7 +64,7 @@ pub fn register() -> Html {
     let onsubmit = async_event!(
     [prevent SubmitEvent] |form_data, history, error_state, locales_store| {
             let creds = form_data.borrow().clone();
-            match api::client::Client::register(creds).await {
+            match ApiClient::register(creds).await {
             Ok(()) => {
                 error_state.set(Option::None);
                 history.push(&Route::Login);

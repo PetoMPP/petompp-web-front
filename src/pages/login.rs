@@ -1,5 +1,5 @@
 use crate::{
-    api, async_event,
+    api::{self, client::ApiClient}, async_event,
     components::atoms::{modal::show_error, text_input::TextInput},
     data::{
         locales::{LocalesStore, TK},
@@ -43,7 +43,7 @@ pub fn login() -> Html {
     let onsubmit = async_event!(
         [prevent SubmitEvent] |form_data, error_state, history, session_dispatch, locales_store| {
             let creds = form_data.borrow().clone();
-            match api::client::Client::login(creds).await {
+            match ApiClient::login(creds).await {
                 Ok(response) => {
                     session_dispatch.reduce(|_| {
                         SessionStore {

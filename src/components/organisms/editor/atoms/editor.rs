@@ -1,6 +1,7 @@
+use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
 use crate::{
-    api::client::{Client, RequestError},
+    api::client::RequestError,
     components::atoms::markdown::Markdown,
     data::{editor::EditorStore, resources::Key, session::SessionStore},
     handle_api_error,
@@ -164,7 +165,7 @@ fn send_file(
     last_mod_state: Rc<RefCell<bool>>,
 ) {
     spawn_local(async move {
-        match Client::upload_img(
+        match ApiClient::upload_img(
             session_store.token.as_deref().unwrap_or_default(),
             file,
             UPLOAD_FOLDER,
@@ -186,7 +187,11 @@ fn send_file(
             Err(e) => {
                 gloo::console::error!(e.to_string());
                 if let RequestError::Endpoint(413, e) = e {
-                    show_error(e.to_string(), false, Option::<UseStateHandle<Option<()>>>::None);
+                    show_error(
+                        e.to_string(),
+                        false,
+                        Option::<UseStateHandle<Option<()>>>::None,
+                    );
                 } else {
                     error_state.set(Some(e))
                 }
