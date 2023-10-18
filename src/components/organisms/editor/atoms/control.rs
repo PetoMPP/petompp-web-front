@@ -1,5 +1,4 @@
 use crate::{
-    api::client::Client,
     async_event,
     components::atoms::{
         flag::{Country, FlagSelect},
@@ -11,7 +10,7 @@ use crate::{
         resources::{Key, ResourceStore},
         session::SessionStore,
     },
-    handle_api_error, use_effect_deps,
+    handle_api_error, use_effect_deps, api::client::ApiClient,
 };
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
@@ -38,7 +37,7 @@ pub fn control(props: &InnerControlProps) -> Html {
     let token = session_store.token.clone().unwrap_or_default();
     let save_available = res_store.get_state(&props.reskey) != Some(&state);
     let save = async_event!(|state, token, props, error_state, dispatch| {
-        match Client::update_resource(
+        match ApiClient::update_resource(
             token.as_str(),
             props.reskey.reskey.as_str(),
             props.reskey.lang.as_str(),
@@ -162,7 +161,7 @@ pub fn key_select(props: &KeySelectProps) -> Html {
     let token = session_store.token.clone().unwrap_or_default();
     use_effect_deps!(|keys, error_state, token| {
         spawn_local(async move {
-            match Client::get_resource_keys(&token).await {
+            match ApiClient::get_resource_keys(&token).await {
                 Ok(k) => keys.set(k),
                 Err(e) => error_state.set(Some(e)),
             }
