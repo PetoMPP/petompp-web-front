@@ -1,8 +1,8 @@
 use crate::{
     data::session::SessionStore,
-    models::user::Role,
     pages::{not_found::NotFound, page_base::EditablePage},
 };
+use petompp_web_models::models::user::Role;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
