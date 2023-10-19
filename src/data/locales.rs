@@ -1,4 +1,5 @@
-use crate::{api::error::validation::PasswordRequirements, components::atoms::flag::Country};
+use crate::api::error::validation::PasswordRequirements;
+use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use strum::{EnumIter, IntoEnumIterator};

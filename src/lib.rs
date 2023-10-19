@@ -14,7 +14,6 @@ use yewdux::prelude::*;
 mod api;
 mod components;
 mod data;
-mod models;
 mod pages;
 mod router;
 mod utils;

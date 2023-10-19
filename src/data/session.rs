@@ -1,4 +1,4 @@
-use crate::models::user::User;
+use petompp_web_models::models::user::User;
 use serde::{Deserialize, Serialize};
 use yewdux::prelude::*;
 

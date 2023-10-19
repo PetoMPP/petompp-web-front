@@ -11,10 +11,10 @@ use crate::{
     async_event,
     components::atoms::modal::show_error,
     data::locales::{LocalesStore, TK},
-    models::credentials::Credentials,
     pages::page_base::PageBase,
     router::Route,
 };
+use petompp_web_models::models::credentials::Credentials;
 use std::fmt::Display;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;

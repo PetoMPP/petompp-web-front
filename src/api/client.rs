@@ -1,5 +1,5 @@
 use super::error::ApiError;
-use crate::models::{
+use petompp_web_models::models::{
     blog_data::BlogMetaData, credentials::Credentials, resource_data::ResourceData, user::User,
 };
 use reqwasm::http::*;
@@ -175,7 +175,8 @@ impl ApiClient {
         lang: &str,
         value: &str,
     ) -> Result<(), RequestError> {
-        let resource = ResourceData::new_from_lang(key, lang, value)?;
+        let resource = ResourceData::new_from_lang(key, lang, value)
+            .ok_or(RequestError::Parse("Invalid lang!".to_string()))?;
         Self::send_json(
             Method::POST,
             format!("api/v1/res/{}", key).as_str(),
