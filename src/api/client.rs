@@ -255,15 +255,13 @@ impl BlobClient {
     }
 
     pub async fn get_post_content(filename: &str) -> Result<String, RequestError> {
-        let resp =
-            Request::new(Self::get_url(format!("blog/{}", filename).as_str()).as_str())
-                .method(Method::GET)
-                .send()
-                .await
-                .map_err(|e| RequestError::Network(e.to_string()))?;
-        match Response::<String>::from_response(resp).await? {
-            Response::Success(content) => Ok(content),
-            Response::Error(s, e) => Err(RequestError::Endpoint(s, e)),
-        }
+        Request::new(Self::get_url(format!("blog/{}", filename).as_str()).as_str())
+            .method(Method::GET)
+            .send()
+            .await
+            .map_err(|e| RequestError::Network(e.to_string()))?
+            .text()
+            .await
+            .map_err(|e| RequestError::Network(e.to_string()))
     }
 }

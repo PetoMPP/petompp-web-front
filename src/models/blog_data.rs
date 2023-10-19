@@ -1,3 +1,5 @@
+use crate::{data::filename::FilenameService, components::atoms::flag::Country};
+
 use super::tag::Tags;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -9,31 +11,15 @@ pub struct BlogMetaData {
     pub created: DateTime<Utc>,
     pub updated: DateTime<Utc>,
     pub image: Option<String>,
+    pub summary: String,
+    pub lang: Country,
 }
 
 impl BlogMetaData {
-    pub fn new(title: impl ToString, tags: Tags, created: DateTime<Utc>) -> Self {
-        Self {
-            title: title.to_string(),
-            tags,
-            created: created.clone(),
-            updated: created,
-            image: Default::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BlogSummaryData {
-    pub meta: BlogMetaData,
-    pub summary: String,
-}
-
-impl BlogSummaryData {
-    pub fn from_meta(meta: BlogMetaData, summary: impl ToString) -> Self {
-        Self {
-            meta,
-            summary: summary.to_string(),
-        }
+    pub fn filename(&self, filename_service: &FilenameService) -> String {
+        self.created.format("%Y-%m-%d").to_string()
+            + filename_service.sanitize(self.title.as_str()).as_str()
+            + self.lang.key()
+            + ".md"
     }
 }
