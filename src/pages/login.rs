@@ -1,14 +1,15 @@
 use crate::{
-    api::{self, client::ApiClient}, async_event,
+    api::{self, client::ApiClient},
+    async_event,
     components::atoms::{modal::show_error, text_input::TextInput},
     data::{
         locales::{LocalesStore, TK},
         session::SessionStore,
     },
-    models::credentials::Credentials,
     pages::page_base::PageBase,
     router::Route,
 };
+use petompp_web_models::models::credentials::Credentials;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;

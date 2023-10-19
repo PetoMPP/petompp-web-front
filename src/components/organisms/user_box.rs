@@ -8,10 +8,10 @@ use crate::{
         locales::{LocalesStore, TK},
         session::SessionStore,
     },
-    models::user::{Role, User},
     router::Route,
     utils::style::get_svg_bg_mask_style,
 };
+use petompp_web_models::models::user::{Role, User};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;

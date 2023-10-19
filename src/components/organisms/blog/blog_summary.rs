@@ -1,10 +1,9 @@
 use super::atoms::blog_tag::BlogTag;
 use crate::{
     components::atoms::date_display::{CreatedDateDisplay, UpdatedDateDisplay},
-    data::filename::FilenameService,
-    models::blog_data::BlogMetaData,
     router::Route,
 };
+use petompp_web_models::{models::blog_data::BlogMetaData, services::filename::FilenameService};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -30,7 +29,11 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
         .unwrap_or("/img/placeholder.svg".to_string());
     let fs = FilenameService::default();
     let meta = props.meta.clone();
-    let onclick = Callback::from(move |_| navigator.push(&Route::BlogPost { id: meta.filename(&fs) }));
+    let onclick = Callback::from(move |_| {
+        navigator.push(&Route::BlogPost {
+            id: meta.filename(&fs),
+        })
+    });
 
     html! {
     <div class={"card card-side bg-base-200"}>

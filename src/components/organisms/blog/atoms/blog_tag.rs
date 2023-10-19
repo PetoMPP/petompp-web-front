@@ -1,10 +1,8 @@
+use petompp_web_models::models::tag::{Tag, Tags};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{
-    models::tag::{Tag, Tags},
-    router::Route,
-};
+use crate::router::Route;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct BlogTagProps {

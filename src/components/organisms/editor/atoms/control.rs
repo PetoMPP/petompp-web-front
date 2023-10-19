@@ -1,7 +1,8 @@
 use crate::{
+    api::client::ApiClient,
     async_event,
     components::atoms::{
-        flag::{Country, FlagSelect},
+        flag::FlagSelect,
         modal::{show_modal, show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     },
     data::{
@@ -10,8 +11,9 @@ use crate::{
         resources::{Key, ResourceStore},
         session::SessionStore,
     },
-    handle_api_error, use_effect_deps, api::client::ApiClient,
+    handle_api_error, use_effect_deps,
 };
+use petompp_web_models::models::country::Country;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use yew::{platform::spawn_local, prelude::*};
