@@ -1,10 +1,10 @@
 use crate::api::client::ApiClient;
-use crate::models::tag::Tags;
 use crate::use_effect_deps;
 use crate::{
     components::{atoms::markdown::Editable, organisms::blog::blog_summary::BlogSummary},
     pages::page_base::PageBase,
 };
+use petompp_web_models::models::tag::Tags;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;

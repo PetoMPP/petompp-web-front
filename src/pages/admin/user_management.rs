@@ -4,9 +4,9 @@ use crate::{
         locales::{LocalesStore, TK},
         session::SessionStore,
     },
-    models::user::Role,
     pages::{not_found::NotFound, page_base::PageBase},
 };
+use petompp_web_models::models::user::Role;
 use yew::prelude::*;
 use yewdux::prelude::*;
 

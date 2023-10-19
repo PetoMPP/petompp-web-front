@@ -1,9 +1,9 @@
 use crate::{
     api::client::{ApiClient, BlobClient},
     components::atoms::markdown::Markdown,
-    data::filename,
     use_effect_deps,
 };
+use petompp_web_models::services::filename::FilenameService;
 use yew::{platform::spawn_local, prelude::*};
 
 #[derive(Clone, PartialEq, Properties)]
@@ -20,7 +20,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
                 gloo::console::log!("xD");
                 return;
             };
-            let filename_service = filename::FilenameService::default();
+            let filename_service = FilenameService::default();
 
             let Ok(content) =
                 BlobClient::get_post_content(meta.filename(&filename_service).as_str()).await

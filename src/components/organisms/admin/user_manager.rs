@@ -1,4 +1,5 @@
 use crate::{
+    api::client::ApiClient,
     async_event,
     components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
@@ -6,8 +7,8 @@ use crate::{
         session::SessionStore,
     },
     handle_api_error,
-    models::user::User, api::client::ApiClient,
 };
+use petompp_web_models::models::user::User;
 use yew::{platform::spawn_local, prelude::*};
 use yewdux::prelude::*;
 
