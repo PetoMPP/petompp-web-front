@@ -5,13 +5,13 @@ use crate::{
         organisms::menu::close_menu,
     },
     data::{
-        locales::{LocalesStore, TK},
+        locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
     router::Route,
     utils::style::get_svg_bg_mask_style,
 };
-use petompp_web_models::models::user::{Role, User};
+use petompp_web_models::models::user::{RoleData, UserData};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
@@ -96,14 +96,14 @@ fn register_button() -> Html {
 
 #[derive(PartialEq, Properties, Clone)]
 struct UserButtonProps {
-    user: User,
+    user: UserData,
 }
 
 #[function_component(UserButton)]
 fn user_button(props: &UserButtonProps) -> Html {
     let navigator = use_navigator().unwrap();
     let onclick = match props.user.role {
-        Role::Admin => Some(Callback::from(move |_| {
+        RoleData::Admin => Some(Callback::from(move |_| {
             close_menu();
             navigator.push(&Route::AdminPanelRoot);
         })),

@@ -4,7 +4,7 @@ use crate::{
         atoms::modal::{ErrorModal, Modal},
         organisms::header::Header,
     },
-    data::locales::LocalesStore,
+    data::locales::store::LocalesStore,
     router::{switch, Route},
 };
 use yew::{platform::spawn_local, prelude::*};
