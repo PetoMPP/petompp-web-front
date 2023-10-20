@@ -1,12 +1,13 @@
 use crate::api::client::ApiClient;
-use crate::data::locales::{LocalesStore, TK};
+use crate::data::locales::store::LocalesStore;
+use crate::data::locales::tk::TK;
 use crate::data::resources::{Key, ResourceStore};
 use crate::data::session::SessionStore;
 use crate::{
     router::{AdminRoute, Route},
     use_effect_deps,
 };
-use petompp_web_models::models::user::Role;
+use petompp_web_models::models::user::RoleData;
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::Element;
 use yew::platform::spawn_local;
@@ -88,7 +89,7 @@ pub fn editable(props: &EditableProps) -> Html {
         })
     };
     let edit_class = match &session_store.user {
-        Some(u) if u.role == Role::Admin => {
+        Some(u) if u.role == RoleData::Admin => {
             "btn absolute top-5 right-5 btn-accent btn-xs btn-outline"
         }
         _ => "hidden",

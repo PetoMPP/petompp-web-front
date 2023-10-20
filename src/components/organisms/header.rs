@@ -3,7 +3,7 @@ use crate::{
         atoms::{flag::FlagSelect, logo::Logo},
         organisms::menu::Menu,
     },
-    data::locales::{LocalesStore, TK},
+    data::locales::{store::LocalesStore, tk::TK},
     router::Route,
 };
 use yew::prelude::*;

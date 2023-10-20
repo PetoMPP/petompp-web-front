@@ -4,7 +4,7 @@ use crate::{
     components::organisms::editor::atoms::editor::save_editor_state,
     data::{
         editor::EditorStore,
-        locales::{LocalesStore, TK},
+        locales::{store::LocalesStore, tk::TK},
         resources::{Key, ResourceStore},
         session::SessionStore,
     },

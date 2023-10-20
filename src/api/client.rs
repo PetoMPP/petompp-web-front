@@ -1,6 +1,9 @@
-use super::error::ApiError;
-use petompp_web_models::models::{
-    blog_data::BlogMetaData, credentials::Credentials, resource_data::ResourceData, user::User,
+use petompp_web_models::{
+    error::Error,
+    models::{
+        blog_data::BlogMetaData, credentials::Credentials, resource_data::ResourceData,
+        user::UserData,
+    },
 };
 use reqwasm::http::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -9,7 +12,7 @@ use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, PartialEq)]
 pub enum RequestError {
-    Endpoint(u16, ApiError),
+    Endpoint(u16, Error),
     Parse(String),
     Network(String),
 }
@@ -24,7 +27,7 @@ impl std::error::Error for RequestError {}
 
 pub enum Response<T> {
     Success(T),
-    Error(u16, ApiError),
+    Error(u16, Error),
 }
 
 impl<T: DeserializeOwned> Response<T> {
@@ -72,7 +75,7 @@ lazy_static::lazy_static! {
 #[derive(Serialize, Deserialize)]
 pub struct LoginResponse {
     pub token: String,
-    pub user: User,
+    pub user: UserData,
 }
 
 impl ApiClient {
@@ -111,12 +114,12 @@ impl ApiClient {
     }
 
     pub async fn register(credentials: Credentials) -> Result<(), RequestError> {
-        Self::send_json::<User>(Method::POST, "api/v1/users", None, Some(&credentials))
+        Self::send_json::<UserData>(Method::POST, "api/v1/users", None, Some(&credentials))
             .await
             .map(|_| ())
     }
 
-    pub async fn get_users(token: &str) -> Result<Vec<User>, RequestError> {
+    pub async fn get_users(token: &str) -> Result<Vec<UserData>, RequestError> {
         Self::send_json(
             Method::GET,
             "api/v1/users/all?range=all",
@@ -124,11 +127,11 @@ impl ApiClient {
             Option::<&String>::None,
         )
         .await
-        .map(|u: Vec<Vec<User>>| u[0].clone())
+        .map(|u: Vec<Vec<UserData>>| u[0].clone())
     }
 
     pub async fn activate_user(token: &str, id: i32) -> Result<(), RequestError> {
-        Self::send_json::<User>(
+        Self::send_json::<UserData>(
             Method::POST,
             format!("api/v1/users/{}/activate", id).as_str(),
             Some(token),
@@ -139,7 +142,7 @@ impl ApiClient {
     }
 
     pub async fn delete_user(token: &str, id: i32) -> Result<(), RequestError> {
-        Self::send_json::<User>(
+        Self::send_json::<UserData>(
             Method::DELETE,
             format!("api/v1/users/{}", id).as_str(),
             Some(token),

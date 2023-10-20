@@ -1,6 +1,6 @@
 use crate::{
     components::organisms::user_box::UserBox,
-    data::locales::{LocalesStore, TK},
+    data::locales::{store::LocalesStore, tk::TK},
     router::Route,
     utils::style::get_svg_bg_mask_style,
 };

@@ -3,12 +3,12 @@ use crate::{
     async_event,
     components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
-        locales::{LocalesStore, TK},
+        locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
     handle_api_error,
 };
-use petompp_web_models::models::user::User;
+use petompp_web_models::models::user::UserData;
 use yew::{platform::spawn_local, prelude::*};
 use yewdux::prelude::*;
 
@@ -54,7 +54,7 @@ pub fn user_manager() -> Html {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct UserRowProps {
-    pub user: User,
+    pub user: UserData,
     pub reload: Callback<()>,
 }
 

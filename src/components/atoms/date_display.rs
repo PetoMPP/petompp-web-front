@@ -1,4 +1,7 @@
-use crate::{data::locales::{LocalesStore, TK}, utils::style::get_svg_bg_mask_style};
+use crate::{
+    data::locales::{store::LocalesStore, tk::TK},
+    utils::style::get_svg_bg_mask_style,
+};
 use chrono::{DateTime, Local, Utc};
 use yew::prelude::*;
 use yewdux::prelude::*;
@@ -22,7 +25,11 @@ pub fn date_display(props: &DateProps) -> Html {
 pub fn created_date_display(props: &DateProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let date = DateTime::<Local>::from(props.date.clone());
-    let tooltip = format!("{}: {}", locales_store.get(TK::Created), date.format("%Y-%m-%d %H:%M:%S"));
+    let tooltip = format!(
+        "{}: {}",
+        locales_store.get(TK::Created),
+        date.format("%Y-%m-%d %H:%M:%S")
+    );
     html! {
         <div class={"tooltip"} data-tip={tooltip}>
             <div class={"flex flex-row items-center text-sm opacity-60"}>
@@ -37,7 +44,11 @@ pub fn created_date_display(props: &DateProps) -> Html {
 pub fn updated_date_display(props: &DateProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let date = DateTime::<Local>::from(props.date.clone());
-    let tooltip = format!("{}: {}", locales_store.get(TK::Updated), date.format("%Y-%m-%d %H:%M:%S"));
+    let tooltip = format!(
+        "{}: {}",
+        locales_store.get(TK::Updated),
+        date.format("%Y-%m-%d %H:%M:%S")
+    );
     html! {
         <div class={"tooltip"} data-tip={tooltip}>
             <div class={"flex flex-row items-center text-sm opacity-60"}>
