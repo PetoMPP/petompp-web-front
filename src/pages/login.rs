@@ -3,7 +3,7 @@ use crate::{
     async_event,
     components::atoms::{modal::show_error, text_input::TextInput},
     data::{
-        locales::{LocalesStore, TK},
+        locales::{localizable::Localizable, store::LocalesStore, tk::TK},
         session::SessionStore,
     },
     pages::page_base::PageBase,
@@ -57,7 +57,7 @@ pub fn login() -> Html {
                     history.push(&Route::Home);
                 }
                 Err(error) => match error {
-                    api::client::RequestError::Endpoint(_, message) => error_state.set(Some(message.into_localized(locales_store.clone()))),
+                    api::client::RequestError::Endpoint(_, message) => error_state.set(Some(message.localize(&*locales_store))),
                     api::client::RequestError::Parse(message) | api::client::RequestError::Network(message) => {
                         show_error(message, true, Option::<UseStateHandle<std::option::Option<String>>>::None)
                     }

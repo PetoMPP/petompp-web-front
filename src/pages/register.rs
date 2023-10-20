@@ -1,19 +1,13 @@
-use crate::api::{
-    client::ApiClient,
-    error::{
-        validation::{Error as ValidationError, UsernameError},
-        ApiError as AppError,
-    },
-};
+use crate::api::client::ApiClient;
 use crate::components::atoms::text_input::TextInput;
+use crate::data::locales::localizable::Localizable;
+use crate::data::locales::store::LocalesStore;
+use crate::data::locales::tk::TK;
 use crate::{
-    api::client::RequestError,
-    async_event,
-    components::atoms::modal::show_error,
-    data::locales::{LocalesStore, TK},
-    pages::page_base::PageBase,
-    router::Route,
+    api::client::RequestError, async_event, components::atoms::modal::show_error,
+    pages::page_base::PageBase, router::Route,
 };
+use petompp_web_models::error::{Error, UsernameValidationError, ValidationError};
 use petompp_web_models::models::credentials::Credentials;
 use std::fmt::Display;
 use web_sys::HtmlInputElement;
@@ -22,16 +16,16 @@ use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 #[derive(Clone, Debug, PartialEq)]
-enum Error {
+enum RegisterError {
     Username(String),
     Password(String),
 }
 
-impl Display for Error {
+impl Display for RegisterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::Username(e) => write!(f, "{}", e),
-            Error::Password(e) => write!(f, "{}", e),
+            RegisterError::Username(e) => write!(f, "{}", e),
+            RegisterError::Password(e) => write!(f, "{}", e),
         }
     }
 }
@@ -73,16 +67,16 @@ pub fn register() -> Html {
                 match error {
                     RequestError::Endpoint(_, error) => {
                         match &error {
-                            AppError::UserNameTaken(_) => error_state.set(Some(Error::Username(error.into_localized(locales_store.clone())))),
-                            AppError::ValidationError(ve) => match ve {
+                            Error::UserNameTaken(_) => error_state.set(Some(RegisterError::Username(error.localize(&*locales_store)))),
+                            Error::ValidationError(ve) => match ve {
                                 ValidationError::Username(ue) => match ue {
-                                    UsernameError::InvalidLength(_, _) |
-                                    UsernameError::InvalidCharacters(_) => error_state.set(Some(Error::Username(error.into_localized(locales_store.clone())))),
+                                    UsernameValidationError::InvalidLength(_, _) |
+                                    UsernameValidationError::InvalidCharacters(_) => error_state.set(Some(RegisterError::Username(error.localize(&*locales_store)))),
                                 },
-                                ValidationError::Password(_) => error_state.set(Some(Error::Password(error.into_localized(locales_store.clone())))),
-                                _ => show_error(error.into_localized(locales_store.clone()), true, Option::<UseStateHandle<Option<String>>>::None),
+                                ValidationError::Password(_) => error_state.set(Some(RegisterError::Password(error.localize(&*locales_store)))),
+                                _ => show_error(error.localize(&*locales_store), true, Option::<UseStateHandle<Option<String>>>::None),
                             },
-                            _ => show_error(error.into_localized(locales_store.clone()), true, Option::<UseStateHandle<Option<String>>>::None),
+                            _ => show_error(error.localize(&*locales_store), true, Option::<UseStateHandle<Option<String>>>::None),
                         }
                     }
                     RequestError::Parse(error) | RequestError::Network(error) => {
@@ -93,11 +87,11 @@ pub fn register() -> Html {
         }
     });
     let username_error = match &*error_state {
-        Some(Error::Username(error)) => Some(error.clone()),
+        Some(RegisterError::Username(error)) => Some(error.clone()),
         _ => None,
     };
     let password_error = match &*error_state {
-        Some(Error::Password(error)) => Some(error.clone()),
+        Some(RegisterError::Password(error)) => Some(error.clone()),
         _ => None,
     };
     html! {

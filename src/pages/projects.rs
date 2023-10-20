@@ -1,5 +1,5 @@
 use crate::{
-    data::locales::{LocalesStore, TK},
+    data::locales::{store::LocalesStore, tk::TK},
     pages::page_base::PageBase,
 };
 use yew::prelude::*;
