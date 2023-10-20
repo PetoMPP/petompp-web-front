@@ -1,19 +1,19 @@
 use crate::{
     components::organisms::admin::user_manager::UserManager,
     data::{
-        locales::{LocalesStore, TK},
+        locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
     pages::{not_found::NotFound, page_base::PageBase},
 };
-use petompp_web_models::models::user::Role;
+use petompp_web_models::models::user::RoleData;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
 #[function_component(UserManagement)]
 pub fn user_management() -> Html {
     let (session_store, _) = use_store::<SessionStore>();
-    let Some(Role::Admin) = session_store.as_ref().user.as_ref().map(|u| &u.role) else {
+    let Some(RoleData::Admin) = session_store.as_ref().user.as_ref().map(|u| &u.role) else {
         return html! {<NotFound />};
     };
     let (locales_store, _) = use_store::<LocalesStore>();
