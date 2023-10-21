@@ -1,5 +1,6 @@
 use super::atoms::blog_tag::BlogTag;
 use crate::{
+    api::client::BlobClient,
     components::atoms::date_display::{CreatedDateDisplay, UpdatedDateDisplay},
     router::Route,
 };
@@ -22,11 +23,10 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
         .into_iter()
         .map(|tag| html! { <BlogTag {tag}/> });
     let style = "-webkit-mask-image: -webkit-linear-gradient(left, rgba(0,0,0,0),rgba(0,0,0,0.8));";
-    let img = props
-        .meta
-        .image
-        .clone()
-        .unwrap_or("/img/placeholder.svg".to_string());
+    let img = match &props.meta.image {
+        Some(img) => BlobClient::get_url(format!("image-upload/{}", img).as_str()),
+        None => "/img/placeholder.svg".to_string(),
+    };
     let fs = FilenameService::default();
     let meta = props.meta.clone();
     let onclick = Callback::from(move |_| {
