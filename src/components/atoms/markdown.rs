@@ -15,8 +15,6 @@ use yew::prelude::*;
 use yew_router::{prelude::*, Routable};
 use yewdux::prelude::use_store;
 
-const ID: &str = "markdown-display";
-
 #[derive(Properties, PartialEq)]
 pub struct MarkdownDisplayProps {
     pub markdown: String,
@@ -26,6 +24,16 @@ pub struct MarkdownDisplayProps {
 
 #[function_component(Markdown)]
 pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
+    let id = use_memo(
+        |()| {
+            "md".to_string()
+                + rand::random::<[char; 8]>()
+                    .into_iter()
+                    .collect::<String>()
+                    .as_str()
+        },
+        (),
+    );
     let navigator = use_navigator().unwrap();
     let html = markdown::to_html_with_options(
         props.markdown.as_str(),
@@ -50,15 +58,15 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
         Some(()) => "prose w-full max-w-full",
         None => "prose w-full max-w-full pointer-events-none",
     };
-    use_effect_deps!(|interactive| {
+    use_effect_deps!(|interactive, id| {
         if interactive.is_some() {
-            make_links_clickable(navigator.clone());
+            make_links_clickable(navigator.clone(), id.as_str());
         }
         || {}
     });
 
     html! {
-        <div {class} id={ID}>
+        <div {class} id={id.to_string()}>
             {Html::VRef(div.into())}
         </div>
     }
@@ -114,8 +122,8 @@ pub fn editable(props: &EditableProps) -> Html {
     }
 }
 
-fn make_links_clickable(navigator: Navigator) {
-    let element = get_display_element();
+fn make_links_clickable(navigator: Navigator, id: &str) {
+    let element = get_display_element(id);
     let links = element.query_selector_all("a").unwrap();
     for i in 0..links.length() {
         let link: Element = links.get(i).unwrap().unchecked_into();
@@ -158,12 +166,12 @@ fn get_route_onclick<T: Routable + std::fmt::Debug + 'static>(
     }))
 }
 
-fn get_display_element() -> Element {
+fn get_display_element(id: &str) -> Element {
     let element: Element = web_sys::window()
         .unwrap()
         .document()
         .unwrap()
-        .get_element_by_id(ID)
+        .get_element_by_id(id)
         .unwrap()
         .unchecked_into();
     element

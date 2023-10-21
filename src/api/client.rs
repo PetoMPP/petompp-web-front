@@ -204,9 +204,9 @@ impl ApiClient {
                 .await
                 .map_err(|e| RequestError::Network(e.to_string()))?;
         match Response::<String>::from_response(resp).await? {
-            Response::Success(filename) => {
-                Ok(format!("{}{}/{}", *AZURE_STORAGE_URL, folder, filename))
-            }
+            Response::Success(filename) => Ok(BlobClient::get_url(
+                format!("image-upload/{}/{}", folder, filename).as_str(),
+            )),
             Response::Error(s, e) => Err(RequestError::Endpoint(s, e)),
         }
     }
@@ -214,7 +214,7 @@ impl ApiClient {
     pub async fn get_posts_meta() -> Result<Vec<BlogMetaData>, RequestError> {
         Self::send_json(
             Method::GET,
-            "api/v1/blog/meta/all",
+            "api/v1/blog/meta/",
             None,
             Option::<&String>::None,
         )
@@ -254,7 +254,7 @@ impl LocalClient {
 pub struct BlobClient;
 
 impl BlobClient {
-    fn get_url(filename: &str) -> String {
+    pub fn get_url(filename: &str) -> String {
         format!("{}{}", *AZURE_STORAGE_URL, filename)
     }
 
