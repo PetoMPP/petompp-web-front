@@ -43,7 +43,9 @@ pub fn blog_tag(props: &BlogTagProps) -> Html {
             Tags::from(vec![tag]),
         ),
     };
-    let onclick = Callback::from(move |_| {
+    let onclick = Callback::from(move |e: MouseEvent| {
+        e.set_cancel_bubble(true);
+        e.stop_propagation();
         if next_tags.tags().is_empty() {
             navigator.push(&Route::Blog);
             return;
