@@ -131,7 +131,7 @@ pub fn control(props: &InnerControlProps) -> Html {
         ),
     };
 
-    handle_api_error!(error_state, session_dispatch, false);
+    handle_api_error!(error_state, session_dispatch, None);
     html! {
         <div class={"flex flex-col lg:flex-row w-full justify-between gap-4 lg:gap-2"}>
             <div class={"flex flex-row gap-4 lg:gap-2"}>
@@ -202,7 +202,7 @@ pub fn key_select(props: &KeySelectProps) -> Html {
             false => onclick,
         }
     };
-    handle_api_error!(error_state, session_dispatch, !props.modified);
+    handle_api_error!(error_state, session_dispatch, None);
     html! {
         <div class={"dropdown"}>
         <label class={"btn btn-sm"} tabindex={"0"}>{&props.reskey.reskey}</label>
