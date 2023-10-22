@@ -1,7 +1,7 @@
 use crate::{
     components::organisms::user_box::UserBox,
     data::locales::{store::LocalesStore, tk::TK},
-    router::Route,
+    router::route::Route,
     utils::style::get_svg_bg_mask_style,
 };
 use wasm_bindgen::JsCast;

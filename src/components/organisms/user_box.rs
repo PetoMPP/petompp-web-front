@@ -8,7 +8,7 @@ use crate::{
         locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
-    router::Route,
+    router::{admin::AdminRoute, route::Route},
     utils::style::get_svg_bg_mask_style,
 };
 use petompp_web_models::models::user::{RoleData, UserData};
@@ -105,7 +105,7 @@ fn user_button(props: &UserButtonProps) -> Html {
     let onclick = match props.user.role {
         RoleData::Admin => Some(Callback::from(move |_| {
             close_menu();
-            navigator.push(&Route::AdminPanelRoot);
+            navigator.push(&AdminRoute::AdminPanel);
         })),
         _ => None,
     };
