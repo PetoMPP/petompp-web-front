@@ -4,7 +4,7 @@ use crate::{
     components::atoms::date_display::{CreatedDateDisplay, UpdatedDateDisplay},
     router::Route,
 };
-use petompp_web_models::{models::blog_data::BlogMetaData, services::filename::FilenameService};
+use petompp_web_models::models::blog_data::BlogMetaData;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -27,24 +27,21 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
         Some(img) => BlobClient::get_url(format!("image-upload/{}", img).as_str()),
         None => "/img/placeholder.svg".to_string(),
     };
-    let fs = FilenameService::default();
-    let meta = props.meta.clone();
-    let onclick = Callback::from(move |_| {
-        navigator.push(&Route::BlogPost {
-            id: meta.filename(&fs),
-        })
-    });
+    let onclick = {
+        let id = props.meta.id.clone();
+        Callback::from(move |_| navigator.push(&Route::BlogPost { id: id.clone() }))
+    };
 
     html! {
     <div class={"card card-side bg-base-200 z-10"} {onclick}>
         <div class={"card-body pt-4"}>
-            <div class={"flex flex-col gap-2"}>
+            <div class={"flex flex-col gap-4 lg:gap-2"}>
                 <div class={"flex flex-row justify-start"}>
                     <div class={"flex flex-row gap-2"}>
                     {for tags}
                     </div>
                 </div>
-                <h2 class={"text-2xl font-semibold"}>{&props.meta.title}</h2>
+                <h2 class={"text-2xl my-2 lg:my-0 font-semibold"}>{&props.meta.title}</h2>
                 <div class={"flex lg:flex-row flex-col gap-1"}>
                     <CreatedDateDisplay date={props.meta.created} />
                     <UpdatedDateDisplay date={props.meta.updated} />

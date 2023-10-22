@@ -62,7 +62,7 @@ pub fn editor(props: &EditorProps) -> Html {
             }
         });
     });
-    handle_api_error!(error_state, session_dispatch, false);
+    handle_api_error!(error_state, session_dispatch, None);
     let onclick = {
         let preview = preview.clone();
         Callback::from(move |_| preview.set(!*preview))

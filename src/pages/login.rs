@@ -59,7 +59,7 @@ pub fn login() -> Html {
                 Err(error) => match error {
                     api::client::RequestError::Endpoint(_, message) => error_state.set(Some(message.localize(&*locales_store))),
                     api::client::RequestError::Parse(message) | api::client::RequestError::Network(message) => {
-                        show_error(message, true, Option::<UseStateHandle<std::option::Option<String>>>::None)
+                        show_error(message, Some((&Route::Home, &history)), Option::<UseStateHandle<std::option::Option<String>>>::None)
                     }
                 },
             }

@@ -33,8 +33,10 @@ Editor: Edytor
 Preview: Podgląd
 SaveDraft: Zapisz kopię roboczą
 Blog: Blog
+BackToBlogPosts: "↩ powrót do postów.."
 Created: Utworzono
 Updated: Zaktualizowano
+ErrorOccured: Wystąpił błąd!
 # Errors
 E_Auth_MissingClaim: Uwierzytelnianie nie powiodło się. Brakujące roszczenie "%{0}".
 E_Auth_InvalidFormat: Uwierzytelnianie nie powiodło się. Nieprawidłowy format roszczenia "%{0}".
@@ -54,6 +56,7 @@ E_Validation_PasswordRequirement_ContainsLowercase: "co najmniej 1 małą liter�
 E_Validation_PasswordRequirement_ContainsUppercase: "co najmniej 1 dużą literę"
 E_Validation_PasswordRequirement_ContainsNumber: "co najmniej 1 cyfrę"
 E_Validation_PasswordRequirement_ContainsSpecialCharacter: "co najmniej 1 znak specjalny"
+E_Validation_Country: "Państwo jest nieprawidłowe."
 E_Validation_Query_InvalidColumn: "Nieprawidłowa kolumna %{0}."
 E_Validation_ResourceData_KeyMismatch: "Niezgodność klucza. Oczekiwano %{0}, otrzymano %{1}."
 E_Validation_ResourceData_KeyMissing: "Brak klucza zasobu."
