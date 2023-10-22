@@ -16,6 +16,7 @@ use yewdux::prelude::*;
 pub fn user_manager() -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
+    let navigator = use_navigator().unwrap();
     let token = session_store.token.clone().unwrap_or_default();
     let error_state = use_state_eq(|| None);
     let reload = use_state_eq(|| true);
@@ -35,7 +36,11 @@ pub fn user_manager() -> Html {
             };
         })
     }
-    handle_api_error!(error_state, session_dispatch, true);
+    handle_api_error!(
+        error_state,
+        session_dispatch,
+        Some((&Route::Home, &navigator))
+    );
     html! {
         <table class={"table"}>
             <thead>
@@ -79,6 +84,7 @@ fn activate_button(props: &UserRowProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, dispatch) = use_store::<ModalStore>();
+    let navigator = use_navigator().unwrap();
     let error_state = use_state_eq(|| None);
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|props, token, error_state| {
@@ -87,7 +93,11 @@ fn activate_button(props: &UserRowProps) -> Html {
             Err(error) => error_state.set(Some(error)),
         }
     });
-    handle_api_error!(error_state, session_dispatch, true);
+    handle_api_error!(
+        error_state,
+        session_dispatch,
+        Some((&Route::Home, &navigator))
+    );
     let (onclick, class) = match props.user.deleted_at.is_some() || props.user.confirmed {
         true => (
             None,
@@ -118,6 +128,7 @@ fn delete_button(props: &UserRowProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, dispatch) = use_store::<ModalStore>();
+    let navigator = use_navigator().unwrap();
     let error_state = use_state_eq(|| None);
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|props, token, error_state| {
@@ -126,7 +137,11 @@ fn delete_button(props: &UserRowProps) -> Html {
             Err(error) => error_state.set(Some(error)),
         }
     });
-    handle_api_error!(error_state, session_dispatch, true);
+    handle_api_error!(
+        error_state,
+        session_dispatch,
+        Some((&Route::Home, &navigator))
+    );
     let (onclick, class) = match props.user.deleted_at.is_some() {
         true => (
             None,

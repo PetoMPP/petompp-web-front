@@ -7,18 +7,24 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 
 #[derive(Clone, PartialEq, Properties)]
-pub struct DateProps {
+pub struct DateDisplayProps {
     pub date: DateTime<Utc>,
+    pub tooltip: Option<String>,
 }
 
 #[function_component(DateDisplay)]
-pub fn date_display(props: &DateProps) -> Html {
+pub fn date_display(props: &DateDisplayProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let formatter = timeago::Formatter::with_language(locales_store.curr);
     let display = formatter.convert_chrono(props.date, Utc::now());
     html! {
-        <time class={"italic"} datetime={props.date.to_string()}>{display}</time>
+        <time class={"tooltip lg:tooltip-bottom tooltip-right italic"} data-tip={props.tooltip.clone()} datetime={props.date.to_string()}>{display}</time>
     }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+pub struct DateProps {
+    pub date: DateTime<Utc>,
 }
 
 #[function_component(CreatedDateDisplay)]
@@ -30,12 +36,14 @@ pub fn created_date_display(props: &DateProps) -> Html {
         locales_store.get(TK::Created),
         date.format("%Y-%m-%d %H:%M:%S")
     );
+    let onclick = Callback::from(move |e: MouseEvent| {
+        e.set_cancel_bubble(true);
+        e.stop_propagation();
+    });
     html! {
-        <div class={"tooltip"} data-tip={tooltip}>
-            <div class={"flex flex-row items-center text-sm opacity-60"}>
-                <div class={"bg-secondary h-6 w-6"} style={get_svg_bg_mask_style("/img/ui/created.svg")}/>
-                <DateDisplay date={props.date} />
-            </div>
+        <div {onclick} class={"flex flex-row items-center text-sm text-base-content text-opacity-60"}>
+            <div class={"bg-secondary h-6 w-6"} style={get_svg_bg_mask_style("/img/ui/created.svg")}/>
+            <DateDisplay date={props.date} {tooltip}/>
         </div>
     }
 }
@@ -49,12 +57,14 @@ pub fn updated_date_display(props: &DateProps) -> Html {
         locales_store.get(TK::Updated),
         date.format("%Y-%m-%d %H:%M:%S")
     );
+    let onclick = Callback::from(move |e: MouseEvent| {
+        e.set_cancel_bubble(true);
+        e.stop_propagation();
+    });
     html! {
-        <div class={"tooltip"} data-tip={tooltip}>
-            <div class={"flex flex-row items-center text-sm opacity-60"}>
-                <div class={"bg-accent h-6 w-6"} style={get_svg_bg_mask_style("/img/ui/updated.svg")}/>
-                <DateDisplay date={props.date} />
-            </div>
+        <div {onclick} class={"flex flex-row items-center text-sm text-base-content text-opacity-60"}>
+            <div class={"bg-accent h-6 w-6"} style={get_svg_bg_mask_style("/img/ui/updated.svg")}/>
+            <DateDisplay date={props.date} {tooltip}/>
         </div>
     }
 }
