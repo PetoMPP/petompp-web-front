@@ -71,7 +71,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
         session_dispatch,
         Some((&Route::Blog, &navigator))
     );
-    let onclick = Callback::from(move |_| navigator.push(&Route::Blog));
+    let onclick = Callback::from(move |_| navigator.push(&Route::BlogRoot));
     let markdown = blog_data
         .as_ref()
         .map(|(_, md, _)| md.clone())

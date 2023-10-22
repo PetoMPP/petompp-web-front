@@ -1,10 +1,13 @@
 use crate::api::client::ApiClient;
 use crate::data::locales::store::LocalesStore;
+use crate::data::session::SessionStore;
+use crate::router::blog::BlogRoute;
 use crate::{
     components::{atoms::markdown::Editable, organisms::blog::blog_summary::BlogSummary},
     pages::page_base::PageBase,
 };
 use petompp_web_models::models::tag::Tags;
+use petompp_web_models::models::user::RoleData;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -14,7 +17,9 @@ use yewdux::prelude::*;
 pub fn blog() -> Html {
     let location = use_location().unwrap();
     let tags = location.query::<Tags>().unwrap_or_default();
+    let (session_store, _) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
+    let navigator = use_navigator().unwrap();
     let posts_int = use_mut_ref(|| None);
     let posts = use_state(|| None);
     use_effect_with_deps(
@@ -65,10 +70,19 @@ pub fn blog() -> Html {
                 <BlogSummary {meta}/>
             }
         });
-    gloo::console::log!("rendering blog", posts.len());
+    let new_post_button = match &session_store.user {
+        Some(u) if u.role == RoleData::Admin => Some(html! {
+            <button class={"btn btn-primary btn-outline"} onclick={Callback::from(move |_|
+                navigator.push(&BlogRoute::New)
+            )}>
+            </button>
+        }),
+        _ => None,
+    };
     html! {
         <PageBase>
         <Editable reskey={"blog-intro".to_string()}/>
+        {new_post_button}
         <div class={"flex flex-col gap-2"}>
             {for posts}
         </div>
