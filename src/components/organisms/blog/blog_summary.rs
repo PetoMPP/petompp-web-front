@@ -2,7 +2,7 @@ use super::atoms::blog_tag::BlogTag;
 use crate::{
     api::client::BlobClient,
     components::atoms::date_display::{CreatedDateDisplay, UpdatedDateDisplay},
-    router::Route,
+    router::blog::BlogRoute,
 };
 use petompp_web_models::models::blog_data::BlogMetaData;
 use yew::prelude::*;
@@ -29,11 +29,11 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
     };
     let onclick = {
         let id = props.meta.id.clone();
-        Callback::from(move |_| navigator.push(&Route::BlogPost { id: id.clone() }))
+        Callback::from(move |_| navigator.push(&BlogRoute::Post { id: id.clone() }))
     };
 
     html! {
-    <div class={"card card-side bg-base-200 z-10"} {onclick}>
+    <div class={"card card-side bg-base-200 z-10 cursor-pointer"} {onclick}>
         <div class={"card-body pt-4"}>
             <div class={"flex flex-col gap-4 lg:gap-2"}>
                 <div class={"flex flex-row justify-start"}>
@@ -42,7 +42,7 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
                     </div>
                 </div>
                 <h2 class={"text-2xl my-2 lg:my-0 font-semibold"}>{&props.meta.title}</h2>
-                <div class={"flex lg:flex-row flex-col gap-1"}>
+                <div class={"flex lg:flex-row flex-col gap-1 cursor-default"}>
                     <CreatedDateDisplay date={props.meta.created} />
                     <UpdatedDateDisplay date={props.meta.updated} />
                 </div>

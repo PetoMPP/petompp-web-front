@@ -3,9 +3,10 @@ use crate::components::atoms::text_input::TextInput;
 use crate::data::locales::localizable::Localizable;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
+use crate::router::route::Route;
 use crate::{
     api::client::RequestError, async_event, components::atoms::modal::show_error,
-    pages::page_base::PageBase, router::Route,
+    pages::page_base::PageBase,
 };
 use petompp_web_models::error::{Error, UsernameValidationError, ValidationError};
 use petompp_web_models::models::credentials::Credentials;

@@ -3,16 +3,13 @@ use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
 use crate::data::resources::{Key, ResourceStore};
 use crate::data::session::SessionStore;
-use crate::{
-    router::{AdminRoute, Route},
-    use_effect_deps,
-};
+use crate::{router::route::Route, use_effect_deps};
 use petompp_web_models::models::user::RoleData;
-use wasm_bindgen::{prelude::Closure, JsCast};
+use wasm_bindgen::JsCast;
 use web_sys::Element;
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_router::{prelude::*, Routable};
+use yew_router::prelude::*;
 use yewdux::prelude::use_store;
 
 #[derive(Properties, PartialEq)]
@@ -124,40 +121,15 @@ fn make_links_clickable(navigator: Navigator, id: &str) {
         let Some(href) = link.get_attribute("href") else {
             continue;
         };
-        match href.as_str() {
-            p if p.starts_with('/') => match Route::recognize(p) {
-                Some(route) => {
-                    let onclick = match route {
-                        Route::AdminPanel => match AdminRoute::recognize(href.as_str()) {
-                            Some(admin_route) => get_route_onclick(admin_route, navigator.clone()),
-                            _ => get_route_onclick(route, navigator.clone()),
-                        },
-                        _ => get_route_onclick(route, navigator.clone()),
-                    };
-                    link.add_event_listener_with_callback(
-                        "click",
-                        onclick.as_ref().unchecked_ref(),
-                    )
-                    .unwrap();
-                    onclick.forget();
-                }
-                None => link.set_attribute("target", "_blank").unwrap(),
-            },
-            p if p.starts_with("http") => link.set_attribute("target", "_blank").unwrap(),
-            _ => continue,
+        if let Some(onclick) = Route::get_onclick_from_str(href.as_str(), navigator.clone()) {
+            link.add_event_listener_with_callback("click", onclick.as_ref().unchecked_ref())
+                .unwrap();
+            onclick.forget();
         };
+        if href.starts_with("http") {
+            link.set_attribute("target", "_blank").unwrap();
+        }
     }
-}
-
-fn get_route_onclick<T: Routable + std::fmt::Debug + 'static>(
-    route: T,
-    navigator: Navigator,
-) -> Closure<dyn Fn(Event)> {
-    let navigator = navigator.clone();
-    Closure::new(Box::new(move |e: Event| {
-        e.prevent_default();
-        navigator.push(&route);
-    }))
 }
 
 fn get_display_element(id: &str) -> Element {
