@@ -25,13 +25,7 @@ pub struct MarkdownDisplayProps {
 #[function_component(Markdown)]
 pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
     let id = use_memo(
-        |()| {
-            "md".to_string()
-                + rand::random::<[char; 8]>()
-                    .into_iter()
-                    .collect::<String>()
-                    .as_str()
-        },
+        |()| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
         (),
     );
     let navigator = use_navigator().unwrap();
