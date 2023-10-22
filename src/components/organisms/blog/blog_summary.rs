@@ -36,16 +36,16 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
     });
 
     html! {
-    <div class={"card card-side bg-base-200"}>
+    <div class={"card card-side bg-base-200 z-10"} {onclick}>
         <div class={"card-body pt-4"}>
-            <div class={"flex flex-col gap-2 z-10"}>
+            <div class={"flex flex-col gap-2"}>
                 <div class={"flex flex-row justify-start"}>
                     <div class={"flex flex-row gap-2"}>
                     {for tags}
                     </div>
                 </div>
-                <h2 class={"hover:underline text-2xl font-semibold"} {onclick}>{&props.meta.title}</h2>
-                <div class={"flex flex-row gap-1"}>
+                <h2 class={"text-2xl font-semibold"}>{&props.meta.title}</h2>
+                <div class={"flex lg:flex-row flex-col gap-1"}>
                     <CreatedDateDisplay date={props.meta.created} />
                     <UpdatedDateDisplay date={props.meta.updated} />
                 </div>
@@ -55,7 +55,7 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
                     <p>{&props.meta.summary}</p>
                 </div>
             </div>
-        <figure class={"absolute right-0 h-full w-2/3 object-fill pointer-events-none"} {style}>
+        <figure class={"absolute z-0 right-0 h-full w-2/3 object-fill pointer-events-none"} {style}>
             <img class={"rounded-xl min-h-full"} src={img}/>
         </figure>
       </div>
