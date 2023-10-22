@@ -35,6 +35,7 @@ impl Localizable for Error {
                     }
                 },
                 ValidationError::Password(pr) => locales.get(TK::E_Validation_Password(pr)),
+                ValidationError::Country => locales.get(TK::E_Validation_Country),
                 ValidationError::Query(qe) => match qe {
                     QueryValidationError::InvalidColumn(c) => {
                         locales.get(TK::E_Validation_Query_InvalidColumn(c))

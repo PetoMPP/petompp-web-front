@@ -221,10 +221,10 @@ impl ApiClient {
         .await
     }
 
-    pub async fn get_post_meta(id: &str) -> Result<BlogMetaData, RequestError> {
+    pub async fn get_post_meta(id: &str, lang: &str) -> Result<BlogMetaData, RequestError> {
         Self::send_json(
             Method::GET,
-            format!("api/v1/blog/meta/{}", id).as_str(),
+            format!("api/v1/blog/meta/{}/{}", id, lang).as_str(),
             None,
             Option::<&String>::None,
         )
@@ -259,7 +259,7 @@ impl BlobClient {
     }
 
     pub async fn get_post_content(filename: &str) -> Result<String, RequestError> {
-        Request::new(Self::get_url(format!("blog/{}", filename).as_str()).as_str())
+        Request::new(Self::get_url(filename).as_str())
             .method(Method::GET)
             .send()
             .await

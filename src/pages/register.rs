@@ -74,13 +74,13 @@ pub fn register() -> Html {
                                     UsernameValidationError::InvalidCharacters(_) => error_state.set(Some(RegisterError::Username(error.localize(&*locales_store)))),
                                 },
                                 ValidationError::Password(_) => error_state.set(Some(RegisterError::Password(error.localize(&*locales_store)))),
-                                _ => show_error(error.localize(&*locales_store), true, Option::<UseStateHandle<Option<String>>>::None),
+                                _ => show_error(error.localize(&*locales_store), Some((&Route::Home, &history)), Option::<UseStateHandle<Option<String>>>::None),
                             },
-                            _ => show_error(error.localize(&*locales_store), true, Option::<UseStateHandle<Option<String>>>::None),
+                            _ => show_error(error.localize(&*locales_store), Some((&Route::Home, &history)), Option::<UseStateHandle<Option<String>>>::None),
                         }
                     }
                     RequestError::Parse(error) | RequestError::Network(error) => {
-                        show_error(error, true, Option::<UseStateHandle<Option<String>>>::None)
+                        show_error(error, Some((&Route::Home, &history)), Option::<UseStateHandle<Option<String>>>::None)
                     }
                 }
             }

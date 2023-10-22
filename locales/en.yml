@@ -33,8 +33,10 @@ Editor: Editor
 Preview: Preview
 SaveDraft: Save Draft
 Blog: Blog
+BackToBlogPosts: "↩ back to posts.."
 Created: Created
 Updated: Updated
+ErrorOccured: An error has occured!
 # Errors
 E_Auth_MissingClaim: Authentication failed. Missing claim "%{0}".
 E_Auth_InvalidFormat: Authentication failed. Invalid calim format "%{0}".
@@ -54,6 +56,7 @@ E_Validation_PasswordRequirement_ContainsLowercase: "at least 1 lowercase letter
 E_Validation_PasswordRequirement_ContainsUppercase: "at least 1 uppercase letters"
 E_Validation_PasswordRequirement_ContainsNumber: "at least 1 number"
 E_Validation_PasswordRequirement_ContainsSpecialCharacter: "at least 1 special character"
+E_Validation_Country: "Country is invalid."
 E_Validation_Query_InvalidColumn: "Invalid column %{0}."
 E_Validation_ResourceData_KeyMismatch: "Key mismatch. Expected %{0}, got %{1}."
 E_Validation_ResourceData_KeyMissing: "Resource data key missing."

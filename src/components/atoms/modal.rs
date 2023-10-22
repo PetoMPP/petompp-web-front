@@ -6,7 +6,11 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use crate::{router::Route, utils::ext::Mergable};
+use crate::{
+    data::locales::{store::LocalesStore, tk::TK},
+    router::Route,
+    utils::ext::Mergable,
+};
 
 #[derive(PartialEq, Clone)]
 pub struct ModalButton {
@@ -101,20 +105,18 @@ pub struct ErrorModalProps {
 pub const ERROR_MODAL_ID: &str = "error_modal";
 pub const ERROR_MODAL_MSG_ID: &str = "error_modal_msg";
 pub const ERROR_MODAL_BTN_ID: &str = "error_modal_btn";
-pub const ERROR_MODAL_REDIRECTING_BTN_ID: &str = "error_modal_redirecting_btn";
 
 #[function_component(ErrorModal)]
 pub fn error_modal() -> Html {
-    let navigator = use_navigator().unwrap();
+    let (locales_store, _) = use_store::<LocalesStore>();
     html! {
         <>
         <dialog id={ERROR_MODAL_ID} class={"modal z-100"}>
         <form method={"dialog"} class={"modal-box bg-warning text-warning-content"}>
-            <h3 class={"font-bold text-lg"}>{"An error has occured!"}</h3>
+            <h3 class={"font-bold text-lg"}>{locales_store.get(TK::ErrorOccured)}</h3>
             <p id={ERROR_MODAL_MSG_ID} class={"py-4"}></p>
             <div class={"flex flex-row-reverse justify-between"}>
-                <button id={ERROR_MODAL_REDIRECTING_BTN_ID} class="btn btn-error" onclick={Callback::from(move |_| navigator.push(&Route::Home)).merge(get_error_close_callback())}>{"OK"}</button>
-                <button id={ERROR_MODAL_BTN_ID} class="btn btn-error hidden" onclick={get_error_close_callback()}>{"OK"}</button>
+                <button id={ERROR_MODAL_BTN_ID} class="btn btn-error">{locales_store.get(TK::Ok)}</button>
             </div>
         </form>
         </dialog>
@@ -124,7 +126,7 @@ pub fn error_modal() -> Html {
 
 pub fn show_error<T: 'static>(
     msg: impl Into<String>,
-    redirect: bool,
+    redirect: Option<(&Route, &Navigator)>,
     error_state: Option<UseStateHandle<Option<T>>>,
 ) {
     let msg: String = msg.into();
@@ -149,34 +151,30 @@ pub fn show_error<T: 'static>(
         .unwrap()
         .get_element_by_id(ERROR_MODAL_BTN_ID)
         .unwrap();
-    let redirect_btn = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .get_element_by_id(ERROR_MODAL_REDIRECTING_BTN_ID)
-        .unwrap();
-    let (btn_class, redirect_btn_class) = match redirect {
-        true => ("btn btn-error hidden", "btn btn-error"),
-        false => ("btn btn-error", "btn btn-error hidden"),
+    let error_state_cb = error_state.map(|es| Box::new(move || es.set(None)));
+    let redirect_cb = redirect.map(|(route, navigator)| {
+        let navigator = navigator.clone();
+        let route = route.clone();
+        Box::new(move || navigator.push(&route))
+    });
+    let cb = {
+        let modal = modal.clone();
+        Closure::wrap(Box::new(move || {
+            let error_state_cb = error_state_cb.clone();
+            let redirect_cb = redirect_cb.clone();
+            if let Some(cb) = error_state_cb {
+                cb();
+            }
+            if let Some(cb) = redirect_cb {
+                cb();
+            }
+            modal.close();
+        }) as Box<dyn FnMut()>)
     };
-    btn.set_attribute("class", btn_class).unwrap();
-    redirect_btn
-        .set_attribute("class", redirect_btn_class)
+    btn.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
         .unwrap();
-    if let Some(error_state) = error_state {
-        let cb = Closure::wrap(Box::new(move || error_state.set(None)) as Box<dyn FnMut()>);
-        btn.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
-            .unwrap();
-        redirect_btn
-            .add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
-            .unwrap();
-        cb.forget();
-    }
+    cb.forget();
     modal.show_modal().unwrap();
-}
-
-pub fn get_error_close_callback() -> Callback<MouseEvent> {
-    get_close_callback(ERROR_MODAL_ID)
 }
 
 pub fn get_modal_close_callback() -> Callback<MouseEvent> {

@@ -140,7 +140,7 @@ pub fn editor(props: &InnerEditProps) -> Html {
             }
         })
     };
-    handle_api_error!(error_state, session_dispatch, !*last_mod_state.borrow());
+    handle_api_error!(error_state, session_dispatch, None);
     let (edit_class, display_class) = match props.preview {
         true => ("hidden", "p-4 rounded-b-lg"),
         false => ("flex flex-col grow", "hidden"),
@@ -189,7 +189,7 @@ fn send_file(
                 if let RequestError::Endpoint(413, e) = e {
                     show_error(
                         e.to_string(),
-                        false,
+                        None,
                         Option::<UseStateHandle<Option<()>>>::None,
                     );
                 } else {
