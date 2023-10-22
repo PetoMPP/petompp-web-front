@@ -8,7 +8,7 @@ use yewdux::prelude::*;
 
 use crate::{
     data::locales::{store::LocalesStore, tk::TK},
-    router::Route,
+    router::route::Route,
     utils::ext::Mergable,
 };
 

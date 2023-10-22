@@ -7,7 +7,7 @@ use crate::{
         session::SessionStore,
     },
     pages::page_base::PageBase,
-    router::Route,
+    router::route::Route,
 };
 use petompp_web_models::models::credentials::Credentials;
 use web_sys::HtmlInputElement;
