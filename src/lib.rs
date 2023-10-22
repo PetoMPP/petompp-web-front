@@ -5,7 +5,7 @@ use crate::{
         organisms::header::Header,
     },
     data::locales::store::LocalesStore,
-    router::{switch, Route},
+    router::route::Route,
 };
 use yew::{platform::spawn_local, prelude::*};
 use yew_router::{BrowserRouter, Switch};
@@ -43,7 +43,7 @@ pub fn app() -> Html {
                 <Header />
                 <img src={"/img/coast.jpg"} class={"w-full w-max-full h-max-full absolute top-10 opacity-40 my-4 h-90"} />
                 <div class={"m-auto w-5/6 xl:w-2/3 flex flex-col grow items-center"}>
-                    <Switch<Route> render={switch}/>
+                    <Switch<Route> render={Route::switch}/>
                 </div>
             </body>
             <Modal />

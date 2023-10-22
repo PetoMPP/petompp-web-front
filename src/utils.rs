@@ -60,7 +60,7 @@ pub mod macros {
         ($error:ident, $session_dispatch: ident, $redirect: expr) => {
             use yew_router::prelude::*;
             use $crate::components::atoms::modal::show_error;
-            use $crate::router::Route;
+            use $crate::router::route::Route;
             if let Some(error) = &*$error {
                 if let $crate::api::client::RequestError::Endpoint(401..=403, _) = error {
                     $session_dispatch.reduce(|_| {

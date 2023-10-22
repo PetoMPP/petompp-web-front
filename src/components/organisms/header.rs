@@ -4,7 +4,7 @@ use crate::{
         organisms::menu::Menu,
     },
     data::locales::{store::LocalesStore, tk::TK},
-    router::Route,
+    router::route::Route,
 };
 use yew::prelude::*;
 use yew_router::prelude::*;
