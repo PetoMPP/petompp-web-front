@@ -47,10 +47,10 @@ pub fn blog_tag(props: &BlogTagProps) -> Html {
         e.set_cancel_bubble(true);
         e.stop_propagation();
         if next_tags.tags().is_empty() {
-            navigator.push(&Route::Blog);
+            navigator.push(&Route::BlogRoot);
             return;
         }
-        navigator.push_with_query(&Route::Blog, &next_tags).unwrap();
+        navigator.push_with_query(&Route::BlogRoot, &next_tags).unwrap();
     });
     html! {
         <button {class} {onclick}>{&props.tag.tag}</button>

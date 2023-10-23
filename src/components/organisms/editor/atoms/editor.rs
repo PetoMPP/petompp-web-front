@@ -143,13 +143,11 @@ pub fn editor(props: &InnerEditProps) -> Html {
     handle_api_error!(error_state, session_dispatch, None);
     let (edit_class, display_class) = match props.preview {
         true => ("hidden", "p-4 rounded-b-lg"),
-        false => ("flex flex-col grow", "hidden"),
+        false => ("w-full font-mono bg-base-100 outline-none p-2 rounded-b-lg overflow-hidden resize-none leading-normal", "hidden"),
     };
     html! {
         <>
-        <div class={edit_class}>
-            <textarea id={TEXTAREA_ID} {oninput} {onpaste} {ondrop} class={"flex grow font-mono bg-base-100 outline-none p-2 rounded-b-lg overflow-hidden resize-none leading-normal"}></textarea>
-        </div>
+        <textarea id={TEXTAREA_ID} {oninput} {onpaste} {ondrop} class={edit_class}></textarea>
         <div class={display_class}><Markdown markdown={(*markdown).clone()} allowhtml={true} /></div>
         </>
     }
