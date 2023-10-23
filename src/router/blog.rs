@@ -1,7 +1,6 @@
+use crate::pages::blog::{blog::Blog, blog_post::BlogPost, new_post::NewPost};
 use yew::prelude::*;
 use yew_router::prelude::*;
-
-use crate::pages::blog::{blog::Blog, blog_post::BlogPost};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 pub enum BlogRoute {
@@ -18,11 +17,7 @@ impl BlogRoute {
         match self {
             BlogRoute::Blog => html! {<Blog />},
             BlogRoute::Post { id } => html! {<BlogPost {id} />},
-            BlogRoute::New =>
-            // html! {<BlogNew />},
-            {
-                todo!()
-            }
+            BlogRoute::New => html! {<NewPost />},
         }
     }
 }

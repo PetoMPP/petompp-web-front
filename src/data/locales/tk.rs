@@ -40,6 +40,7 @@ pub enum TK {
     SaveDraft,
     Blog,
     BackToBlogPosts,
+    CreateNewBlogPost,
     Created,
     Updated,
     ErrorOccured,
