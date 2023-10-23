@@ -73,7 +73,7 @@ pub fn editor(props: &EditorProps) -> Html {
     };
     let local_changes = use_state_eq(|| false);
     let local_class = match &*local_changes {
-        true => "lg:absolute lg:top-0 lg:left-0 lg:right-0 lg:w-fit lg:mx-auto shrink rounded-b-md btn btn-sm btn-secondary opacity-70 no-animation rounded-none",
+        true => "absolute top-0 left-0 lg:right-0 lg:w-fit lg:mx-auto shrink rounded-b-md btn btn-sm btn-secondary opacity-70 no-animation rounded-none",
         false => "hidden",
     };
     let save_local =
@@ -89,11 +89,9 @@ pub fn editor(props: &EditorProps) -> Html {
             <div class={"flex flex-row gap-2 p-2 rounded-t-lg"}>
             <Control reskey={props.reskey.clone()} state={(*state).clone()} modified={*local_changes} />
             </div>
-            <div class={"relative m-2 mt-0 bg-base-100"}>
-                <div class={"flex flex-row justify-end gap-2 px-2"}>
-                    <a class={local_class} onclick={save_local}>{locales_store.get(TK::SaveDraft)}</a>
-                    <a class={"lg:absolute right-2 top-0 rounded-b-md btn btn-sm btn-primary opacity-70 no-animation rounded-none"} {onclick}>{btn_text}</a>
-                </div>
+            <div class={"relative m-2 mt-0"}>
+                <a class={local_class} onclick={save_local}>{locales_store.get(TK::SaveDraft)}</a>
+                <a class={"absolute right-0 top-0 rounded-b-md btn btn-sm btn-primary opacity-70 no-animation rounded-none"} {onclick}>{btn_text}</a>
                 <EditorInner reskey={props.reskey.clone()} state={(*state).clone()} preview={*preview} {onmodifiedchanged}/>
             </div>
         </div>
