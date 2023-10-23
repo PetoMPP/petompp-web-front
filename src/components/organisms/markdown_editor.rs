@@ -2,8 +2,7 @@ use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
 use crate::{
     api::client::RequestError,
-    components::atoms::markdown::Markdown,
-    data::{editor::EditorStore, resources::Key, session::SessionStore},
+    data::{resources::Key, session::SessionStore},
     handle_api_error,
 };
 use std::cell::RefCell;
@@ -17,15 +16,14 @@ const TEXTAREA_ID: &str = "editor-textarea";
 const UPLOAD_FOLDER: &str = "editor";
 
 #[derive(Clone, PartialEq, Properties)]
-pub struct InnerEditProps {
+pub struct MarkdownEditorProps {
     pub reskey: Key,
     pub state: String,
-    pub preview: bool,
     pub onmodifiedchanged: Callback<bool>,
 }
 
-#[function_component(Editor)]
-pub fn editor(props: &InnerEditProps) -> Html {
+#[function_component(MarkdownEditor)]
+pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
     let props = props.clone();
     let error_state = use_state_eq(|| None);
     let current_val = use_mut_ref(String::new);
@@ -141,15 +139,9 @@ pub fn editor(props: &InnerEditProps) -> Html {
         })
     };
     handle_api_error!(error_state, session_dispatch, None);
-    let (edit_class, display_class) = match props.preview {
-        true => ("hidden", "p-4 rounded-b-lg"),
-        false => ("w-full font-mono bg-base-100 outline-none p-2 rounded-b-lg overflow-hidden resize-none leading-normal", "hidden"),
-    };
+
     html! {
-        <>
-        <textarea id={TEXTAREA_ID} {oninput} {onpaste} {ondrop} class={edit_class}></textarea>
-        <div class={display_class}><Markdown markdown={(*markdown).clone()} allowhtml={true} /></div>
-        </>
+        <textarea id={TEXTAREA_ID} {oninput} {onpaste} {ondrop} class={"w-full font-mono bg-base-100 outline-none p-2 rounded-lg overflow-hidden resize-none leading-normal"}></textarea>
     }
 }
 
@@ -157,7 +149,7 @@ fn send_file(
     session_store: Rc<SessionStore>,
     file: web_sys::File,
     error_state: UseStateHandle<Option<RequestError>>,
-    props: InnerEditProps,
+    props: MarkdownEditorProps,
     current_val: Rc<RefCell<String>>,
     last_state: Rc<RefCell<String>>,
     last_mod_state: Rc<RefCell<bool>>,
@@ -230,24 +222,6 @@ fn insert_img_into_textarea(img_url: &str) -> Option<String> {
         return Some(new_value);
     }
     None
-}
-
-pub fn save_editor_state(store: Rc<EditorStore>, dispatch: Dispatch<EditorStore>, reskey: Key) {
-    if let Some(element) = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .get_element_by_id(TEXTAREA_ID)
-    {
-        let element: HtmlInputElement = element.unchecked_into();
-        let value = element.value();
-        if Some(&value) == store.get_state(&reskey) {
-            return;
-        }
-        dispatch.reduce_mut(|store| {
-            store.add_or_update_state(&reskey, value);
-        });
-    }
 }
 
 fn set_textarea_text(value: &str) {
