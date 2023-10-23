@@ -1,5 +1,6 @@
 use crate::api::client::ApiClient;
 use crate::data::locales::store::LocalesStore;
+use crate::data::locales::tk::TK;
 use crate::data::session::SessionStore;
 use crate::router::blog::BlogRoute;
 use crate::{
@@ -71,12 +72,16 @@ pub fn blog() -> Html {
             }
         });
     let new_post_button = match &session_store.user {
-        Some(u) if u.role == RoleData::Admin => Some(html! {
-            <button class={"btn btn-primary btn-outline"} onclick={Callback::from(move |_|
-                navigator.push(&BlogRoute::New)
-            )}>
-            </button>
-        }),
+        Some(u) if u.role == RoleData::Admin => {
+            let onclick = Callback::from(move |_| navigator.push(&BlogRoute::New));
+            Some(html! {
+                <div class={"flex w-full justify-end py-2"}>
+                    <button class={"flex btn btn-primary btn-outline"} {onclick}>
+                        {locales_store.get(TK::CreateNewBlogPost)}
+                    </button>
+                </div>
+            })
+        }
         _ => None,
     };
     html! {
