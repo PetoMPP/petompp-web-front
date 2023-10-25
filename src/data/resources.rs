@@ -1,32 +1,55 @@
+use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fmt::Display;
-use yewdux::prelude::*;
 
-#[derive(Default, PartialEq, Clone, Debug, Serialize, Deserialize, Eq, Hash)]
-pub struct Key {
-    pub reskey: String,
-    pub lang: String,
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct ResourceId {
+    /// "<reskey>@<lang>"
+    key: Option<String>,
+    /// "<folder-path>@<lang>"
+    blob: Option<String>,
 }
 
-impl Display for Key {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}{}", self.reskey, self.lang))
+impl TryInto<ResId> for ResourceId {
+    type Error = String;
+
+    fn try_into(self) -> Result<ResId, Self::Error> {
+        match (self.key, self.blob) {
+            (Some(key), None) => {
+                let (path, lang) = key.split_once("@").ok_or("invalid key")?;
+                Ok(ResId::ResKey((
+                    path.to_string(),
+                    Country::try_from(lang).map_err(|_| "invalid lang")?,
+                )))
+            }
+            (None, Some(blob)) => {
+                let (path, lang) = blob.split_once("@").ok_or("invalid blob")?;
+                Ok(ResId::Blob((
+                    path.to_string(),
+                    Country::try_from(lang).map_err(|_| "invalid lang")?,
+                )))
+            }
+            _ => Err("invalid resource id".to_string()),
+        }
     }
 }
 
-#[derive(Default, PartialEq, Clone, Debug, Store, Serialize, Deserialize)]
-#[store(storage = "local", storage_tab_sync)]
-pub struct ResourceStore {
-    values: HashMap<String, String>,
+impl From<ResId> for ResourceId {
+    fn from(value: ResId) -> Self {
+        match value {
+            ResId::ResKey((p, l)) => Self {
+                key: Some(format!("{}@{}", p, l.key())),
+                blob: None,
+            },
+            ResId::Blob((p, l)) => Self {
+                key: None,
+                blob: Some(format!("{}@{}", p, l.key())),
+            },
+        }
+    }
 }
 
-impl ResourceStore {
-    pub fn get_state<'a>(&'a self, key: &Key) -> Option<&'a String> {
-        self.values.get(&key.to_string())
-    }
-
-    pub fn add_or_update_state(&mut self, key: &Key, state: String) {
-        self.values.insert(key.to_string(), state);
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub enum ResId {
+    ResKey((String, Country)),
+    Blob((String, Country)),
 }

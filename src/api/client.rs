@@ -258,12 +258,25 @@ impl BlobClient {
         format!("{}{}", *AZURE_STORAGE_URL, filename)
     }
 
+    pub fn get_post_url(filename: &str) -> String {
+        format!("{}blog/{}", *AZURE_STORAGE_URL, filename)
+    }
+
     pub async fn get_post_content(filename: &str) -> Result<String, RequestError> {
-        Request::new(Self::get_url(filename).as_str())
+        let response = &Request::new(Self::get_post_url(filename).as_str())
             .method(Method::GET)
             .send()
             .await
-            .map_err(|e| RequestError::Network(e.to_string()))?
+            .map_err(|e| RequestError::Network(e.to_string()))?;
+
+        if response.status() == 404 {
+            return Err(RequestError::Endpoint(
+                404,
+                Error::Status(404, "Not found".to_string()),
+            ));
+        }
+
+        response
             .text()
             .await
             .map_err(|e| RequestError::Network(e.to_string()))
