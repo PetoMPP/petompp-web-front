@@ -1,7 +1,7 @@
 use crate::api::client::ApiClient;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
-use crate::data::resources::{Key, ResourceStore};
+use crate::data::resources::{ResId, ResourceId};
 use crate::data::session::SessionStore;
 use crate::{router::route::Route, use_effect_deps};
 use petompp_web_models::models::user::RoleData;
@@ -72,42 +72,42 @@ pub struct EditableProps {
 pub fn editable(props: &EditableProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, _) = use_store::<SessionStore>();
-    let (res_store, res_dispatch) = use_store::<ResourceStore>();
-    let reskey = Key {
-        reskey: props.reskey.clone(),
-        lang: locales_store.curr.key().to_string(),
-    };
+    let (reskey, lang) = (props.reskey.clone(), locales_store.curr.clone());
     let navigator = use_navigator().unwrap();
     let edit_onclick = {
-        let reskey = reskey.clone();
+        let (reskey, lang) = (reskey.clone(), lang.clone());
+        let reskey = ResId::ResKey((reskey, lang));
         Callback::from(move |_| {
-            navigator.push(&Route::Editor {
-                key: reskey.reskey.clone(),
-                lang: reskey.lang.clone(),
-            });
+            navigator
+                .push_with_query(&Route::Editor, &ResourceId::from(reskey.clone()))
+                .unwrap()
         })
     };
-    let edit_class = match &session_store.user {
-        Some(u) if u.role == RoleData::Admin => {
-            "btn absolute top-5 right-5 btn-accent btn-xs btn-outline"
+    let edit_button = session_store.user.as_ref().and_then(|u| {
+        if u.role != RoleData::Admin {
+            return None;
         }
-        _ => "hidden",
-    };
-    let markdown = res_store.get_state(&reskey).cloned().unwrap_or_default();
-    spawn_local(async move {
-        if let Ok(md) = ApiClient::get_resource(reskey.reskey.as_str(), reskey.lang.as_str()).await
-        {
-            if res_store.get_state(&reskey) != Some(&md) {
-                res_dispatch.reduce_mut(|store| {
-                    store.add_or_update_state(&reskey, md);
-                });
-            }
-        }
+        Some(html! {
+            <button class={"btn absolute top-5 right-5 btn-accent btn-xs btn-outline"} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
+        })
     });
+    let markdown = use_state_eq(|| None);
+    {
+        let markdown = markdown.clone();
+        spawn_local(async move {
+            if markdown.is_some() {
+                return;
+            }
+            if let Ok(md) = ApiClient::get_resource(reskey.as_str(), lang.key()).await {
+                markdown.set(Some(md));
+            }
+        })
+    };
+    let markdown = (*markdown).clone().unwrap_or_default();
 
     html! {
         <>
-        <button class={edit_class} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
+        {edit_button}
         <Markdown {markdown} interactive={Some(())} allowhtml={true}/>
         </>
     }

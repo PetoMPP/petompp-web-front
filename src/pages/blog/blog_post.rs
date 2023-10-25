@@ -1,7 +1,10 @@
 use crate::{
     api::client::{ApiClient, BlobClient},
     components::atoms::markdown::Markdown,
-    data::{locales::{store::LocalesStore, tk::TK}, session::SessionStore},
+    data::{
+        locales::{store::LocalesStore, tk::TK},
+        session::SessionStore,
+    },
     handle_api_error,
     pages::page_base::PageBase,
 };
@@ -47,7 +50,11 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
                             return;
                         }
                     };
-                let md = match BlobClient::get_post_content(meta.filename().as_str()).await {
+                let md = match BlobClient::get_post_content(
+                    format!("{}/{}.md", meta.id, meta.lang.key()).as_str(),
+                )
+                .await
+                {
                     Ok(content) => content,
                     Err(e) => {
                         error_state.set(Some(e));
