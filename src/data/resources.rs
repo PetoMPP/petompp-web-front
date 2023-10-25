@@ -1,3 +1,4 @@
+use crate::api::client::{ApiClient, BlobClient, RequestError};
 use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
 
@@ -52,4 +53,30 @@ impl From<ResId> for ResourceId {
 pub enum ResId {
     ResKey((String, Country)),
     Blob((String, Country)),
+}
+
+impl ResId {
+    pub fn with_lang(self, lang: Country) -> Self {
+        match self {
+            Self::ResKey((p, _)) => Self::ResKey((p, lang)),
+            Self::Blob((p, _)) => Self::Blob((p, lang)),
+        }
+    }
+
+    pub fn lang(&self) -> &Country {
+        match self {
+            Self::ResKey((_, l)) | Self::Blob((_, l)) => l,
+        }
+    }
+
+    pub async fn get_value(&self) -> Result<String, RequestError> {
+        match self {
+            Self::ResKey((reskey, lang)) => {
+                ApiClient::get_resource(reskey.as_str(), lang.key()).await
+            }
+            Self::Blob((path, lang)) => {
+                BlobClient::get_post_content(format!("{}/{}.md", path, lang.key()).as_str()).await
+            }
+        }
+    }
 }
