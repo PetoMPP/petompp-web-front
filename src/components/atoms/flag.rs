@@ -1,4 +1,4 @@
-use petompp_web_models::models::country::{Country, into_iter};
+use petompp_web_models::models::country::{into_iter, Country};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use yew::prelude::*;
@@ -42,15 +42,15 @@ pub fn flag_select(props: &FlagSelectProps) -> Html {
     };
     html! {
         <div class={"dropdown block"}>
-            <label tabindex={"0"}>
+            <label class={"flex btn btn-md"} tabindex={"0"}>
             <Flag country={props.country} />
             </label>
-            <ul tabindex={"0"} class={"dropdown-content flex z-[1]"}>
+            <ul tabindex={"0"} class={"dropdown-content bg-base-200 hover:bg-base-300 mt-1 rounded-md flex z-[1]"}>
             { for Country::iter()
                 .filter(|c| c != &props.country)
                 .map(|country|
                     html! {
-                        <li class={"flex"} onclick={get_onclick(&country)}>
+                        <li class={"flex btn btn-md"} onclick={get_onclick(&country)}>
                             <Flag {country} />
                         </li>
                     }
