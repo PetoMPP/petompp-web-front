@@ -1,10 +1,6 @@
 use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
-use crate::{
-    api::client::RequestError,
-    data::{resources::Key, session::SessionStore},
-    handle_api_error,
-};
+use crate::{api::client::RequestError, data::session::SessionStore, handle_api_error};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
@@ -17,7 +13,6 @@ const UPLOAD_FOLDER: &str = "editor";
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct MarkdownEditorProps {
-    pub reskey: Key,
     pub state: String,
     pub onmodifiedchanged: Callback<bool>,
 }
