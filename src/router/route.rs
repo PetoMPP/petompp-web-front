@@ -25,8 +25,8 @@ pub enum Route {
     Login,
     #[at("/register")]
     Register,
-    #[at("/editor/:key/:lang")]
-    Editor { key: String, lang: String },
+    #[at("/editor")]
+    Editor,
     // Admin routes
     #[at("/admin")]
     AdminRoot,
@@ -60,7 +60,7 @@ impl Route {
             Route::Contact => html! {<Contact />},
             Route::Login => html! {<Login />},
             Route::Register => html! {<Register />},
-            Route::Editor { key, lang } => html! { <Editor reskey={key} lang={lang} />},
+            Route::Editor => html! { <Editor />},
             Route::AdminRoot | Route::Admin => {
                 html! {<Switch<AdminRoute> render={AdminRoute::switch} />}
             }
