@@ -1,6 +1,6 @@
-use crate::components::atoms::flag::FlagSelect;
+use crate::components::atoms::resource_select::ResourceSelect;
 use crate::components::organisms::markdown_editor::MarkdownEditor;
-use crate::data::resources::{ResId, ResourceId};
+use crate::data::resources::ResourceId;
 use crate::data::session::SessionStore;
 use crate::handle_api_error;
 use crate::pages::page_base::PageBase;
@@ -11,55 +11,71 @@ use yewdux::prelude::*;
 #[function_component(Editor)]
 pub fn editor() -> Html {
     let location = use_location().unwrap();
-    let res_id: ResId = location
+    let (resid, lang) = match location
         .query::<ResourceId>()
         .map_err(|h| h.to_string())
         .and_then(|r| r.try_into())
-        .unwrap();
+    {
+        Ok((resid, lang)) => (Some(resid), Some(lang)),
+        Err(_) => (None, None),
+    };
     let (_, session_dispatch) = use_store::<SessionStore>();
     let navigator = use_navigator().unwrap();
     let state = use_state_eq(|| None);
     let error_state = use_state_eq(|| None);
     use_effect_with_deps(
-        |(res_id, state, error_state)| {
-            let res_id = res_id.clone();
+        |(resid, lang, state, error_state)| {
+            let lang = lang.clone();
             let state = state.clone();
             let error_state = error_state.clone();
-            if error_state.is_some() {
+            let Some(resid) = resid.clone() else {
+                state.set(None);
                 return;
-            }
+            };
+            let Some(lang) = lang.clone() else {
+                state.set(None);
+                return;
+            };
             spawn_local(async move {
-                match res_id.get_value().await {
-                    Ok(new_state) => state.set(Some(new_state)),
+                match resid.get_value(&lang).await {
+                    Ok(new_state) => state.set(Some(((resid, lang), new_state))),
                     Err(e) => {
                         error_state.set(Some(e));
                     }
                 }
             });
         },
-        (res_id.clone(), state.clone(), error_state.clone()),
+        (
+            resid.clone(),
+            lang.clone(),
+            state.clone(),
+            error_state.clone(),
+        ),
     );
     handle_api_error!(error_state, session_dispatch, None);
-    let editor = state
-        .as_ref()
-        .map(|s| {
-            html! {
-                <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/>
-            }
-        })
-        .unwrap_or(html! {
-            <span class={"flex mx-auto loading loading-ring loading-lg"}/>
-        });
+    let res_lang = resid.as_ref().and_then(|r| lang.as_ref().map(|l| (r, l)));
+    let editor = match (state.as_ref(), res_lang) {
+        (Some(((data_resid, data_lang), s)), Some((resid, lang)))
+            if data_resid == resid && data_lang == lang =>
+        {
+            html! { <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/> }
+        }
+        (_, Some(_)) => html! {
+            <div class={"w-full flex bordered-lg bg-base-100"}>
+                <span class={"flex mx-auto loading loading-ring loading-lg"}/>
+            </div>
+        },
+        (_, None) => html! {
+            <div class={"w-full flex bordered-lg bg-base-100"}>
+                <p class={"mx-auto py-4 text-xl font-semibold"}>{"Select something to edit!"}</p>
+            </div>
+        },
+    };
     let onselectedchanged = {
-        let res_id = res_id.clone();
         let navigator = navigator.clone();
-        Callback::from(move |c| {
-            let navigator = navigator.clone();
+        Callback::from(move |resource_id| {
             navigator
-                .push_with_query(
-                    &Route::Editor,
-                    &ResourceId::from(res_id.clone().with_lang(c)),
-                )
+                .push_with_query(&Route::Editor, &resource_id)
                 .unwrap()
         })
     };
@@ -68,11 +84,10 @@ pub fn editor() -> Html {
             <div class={"prose"}>
                 <h1>{"Editor"}</h1>
                 <p>{"This is the editor page. Here you can edit the content of the page selected."}</p>
-                <h2>{"Now editing:"}<a class={"btn btn-md m-1 p-1"}>{format!("{:?}", res_id)}</a></h2>
-                <h2 class={"not-prose flex gap-2 items-center"}>{"In lang:"}<FlagSelect country={res_id.lang().clone()} {onselectedchanged} /></h2>
+                <h2 class={"not-prose flex gap-2 items-center"}>{"Now editing:"}<ResourceSelect {resid} {lang} {onselectedchanged}/></h2>
                 <p/>
             </div>
-            <div class={"flex bg-secondary rounded-lg p-2"}>
+            <div class={"flex bg-base-300 rounded-lg p-2"}>
                 {editor}
             </div>
         </PageBase>
