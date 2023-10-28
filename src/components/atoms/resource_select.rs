@@ -1,11 +1,10 @@
 use crate::{
     api::client::ApiClient,
-    components::atoms::flag::FlagSelect,
+    components::{atoms::flag::FlagSelect, state::State},
     data::{
         resources::{ResId, ResourceId},
         session::SessionStore,
     },
-    handle_api_error,
 };
 use petompp_web_models::models::country::Country;
 use yew::{platform::spawn_local, prelude::*};
@@ -46,28 +45,25 @@ impl Mode {
 pub fn resource_select(props: &ResourceSelectProps) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let token = session_store.token.clone().unwrap_or_default();
-    let error_state = use_state_eq(|| None);
-    let data = use_state(|| None);
+    let data = use_state(|| State::Ok(None));
     use_effect_with_deps(
-        |(data, token, error_state)| {
-            if data.is_some() {
-                return;
-            }
+        |(data, token)| {
             let data = data.clone();
+            match &*data {
+                State::Ok(Some(_)) | State::Loading | State::Err(_) => return,
+                _ => {}
+            };
+            data.set(State::Loading);
             let token = token.clone();
-            let error_state = error_state.clone();
             spawn_local(async move {
                 match ApiClient::get_res_ids(token.as_str()).await {
-                    Ok((res, ps)) => data.set(Some((res, ps))),
-                    Err(e) => {
-                        error_state.set(Some(e));
-                    }
+                    Ok((res, ps)) => data.set(State::Ok(Some((res, ps)))),
+                    Err(e) => data.set(State::Err(e)),
                 }
             });
         },
-        (data.clone(), token, error_state.clone()),
+        (data.clone(), token),
     );
-    handle_api_error!(error_state, session_dispatch, None);
     let onselectedchanged_resid = {
         let props = props.clone();
         Callback::from(move |r| {
@@ -86,14 +82,24 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
         })
     };
     let list = match (*data).clone() {
-        Some((resources, posts)) => {
+        State::Ok(Some((resources, posts))) => {
             html! {
                 <ResourceList currentresid={props.resid.clone()} resources={resources} posts={posts} onselectedchanged={onselectedchanged_resid}/>
             }
         }
-        None => html! {
-            <span class={"flex mx-auto loading loading-ring loading-lg"}/>
+        State::Ok(None) | State::Loading => html! {
+            <div class={"btn pointer-events-none"}>
+                <span class={"flex mx-auto loading loading-ring loading-lg"}/>
+            </div>
         },
+        State::Err(e) => {
+            if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
+                return redirect;
+            }
+            html! {
+                <div class={"btn btn-warning pointer-events-none"}>{"Unable to load data!"}</div>
+            }
+        }
     };
     let lang_select = props.lang.as_ref().map(|c| {
         html! {
