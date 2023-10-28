@@ -1,75 +1,91 @@
 use crate::components::atoms::resource_select::ResourceSelect;
 use crate::components::organisms::markdown_editor::MarkdownEditor;
-use crate::data::resources::ResourceId;
+use crate::components::state::State;
+use crate::data::resources::{ResId, ResourceId};
 use crate::data::session::SessionStore;
-use crate::handle_api_error;
 use crate::pages::page_base::PageBase;
+use crate::router::route::Route;
+use crate::utils::style::get_svg_bg_mask_style;
+use petompp_web_models::models::country::Country;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 #[function_component(Editor)]
 pub fn editor() -> Html {
     let location = use_location().unwrap();
-    let (resid, lang) = match location
+    let (resid, lang) = location
         .query::<ResourceId>()
-        .map_err(|h| h.to_string())
-        .and_then(|r| r.try_into())
-    {
-        Ok((resid, lang)) => (Some(resid), Some(lang)),
-        Err(_) => (None, None),
-    };
+        .ok()
+        .and_then(|r| TryInto::<(ResId, Country)>::try_into(r).ok())
+        .and_then(|(r, l)| Some((Some(r), Some(l))))
+        .unwrap_or_default();
     let (_, session_dispatch) = use_store::<SessionStore>();
     let navigator = use_navigator().unwrap();
-    let state = use_state_eq(|| None);
-    let error_state = use_state_eq(|| None);
+    let state = use_state_eq(|| State::Ok(None));
     use_effect_with_deps(
-        |(resid, lang, state, error_state)| {
-            let lang = lang.clone();
-            let state = state.clone();
-            let error_state = error_state.clone();
+        |(resid, lang, state)| {
             let Some(resid) = resid.clone() else {
-                state.set(None);
+                state.set(State::Ok(None));
                 return;
             };
             let Some(lang) = lang.clone() else {
-                state.set(None);
+                state.set(State::Ok(None));
                 return;
             };
+            let state = state.clone();
+            match &*state {
+                State::Ok(Some(((r, l), _))) if r == &resid && l == &lang => return,
+                State::Loading | State::Err(_) => return,
+                _ => {}
+            };
+
+            state.set(State::Loading);
             spawn_local(async move {
-                match resid.get_value(&lang).await {
-                    Ok(new_state) => state.set(Some(((resid, lang), new_state))),
-                    Err(e) => {
-                        error_state.set(Some(e));
-                    }
-                }
+                state.set(match resid.get_value(&lang).await {
+                    Ok(state) => State::Ok(Some(((resid, lang), state))),
+                    Err(e) => State::Err(e),
+                })
             });
         },
-        (
-            resid.clone(),
-            lang.clone(),
-            state.clone(),
-            error_state.clone(),
-        ),
+        (resid.clone(), lang.clone(), state.clone()),
     );
-    handle_api_error!(error_state, session_dispatch, None);
-    let res_lang = resid.as_ref().and_then(|r| lang.as_ref().map(|l| (r, l)));
-    let editor = match (state.as_ref(), res_lang) {
-        (Some(((data_resid, data_lang), s)), Some((resid, lang)))
-            if data_resid == resid && data_lang == lang =>
-        {
+    let editor = match &*state {
+        State::Ok(Some(((_, _), s))) => {
             html! { <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/> }
         }
-        (_, Some(_)) => html! {
-            <div class={"w-full flex bordered-lg bg-base-100"}>
-                <span class={"flex mx-auto loading loading-ring loading-lg"}/>
-            </div>
-        },
-        (_, None) => html! {
-            <div class={"w-full flex bordered-lg bg-base-100"}>
+        State::Ok(None) => html! {
+            <div class={"w-full flex rounded-lg bg-base-100"}>
                 <p class={"mx-auto py-4 text-xl font-semibold"}>{"Select something to edit!"}</p>
             </div>
         },
+        State::Loading => html! {
+            <div class={"w-full flex rounded-lg bg-base-100"}>
+                <span class={"flex mx-auto py-4 loading loading-ring loading-lg"}/>
+            </div>
+        },
+        State::Err(e) => {
+            if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
+                return redirect;
+            }
+            html! {
+                <div class={"w-full flex flex-col gap-4 rounded-lg bg-error"}>
+                    <p class={"mx-auto py-4 text-error-content text-xl font-semibold"}>{"Something went wrong!"}</p>
+                    <p class={"mx-auto py-4 text-error-content"}>{e.to_string()}</p>
+                </div>
+            }
+        }
+    };
+    let reload = match &*state {
+        State::Err(_) => Some(html! {
+            <button class={"btn btn-square"} onclick={Callback::from(move |_| {
+                state.set(State::Ok(None));
+            })}>
+                <div class={"bg-base-content h-10 w-10"} style={get_svg_bg_mask_style("/img/ui/reload.svg")}/>
+            </button>
+        }),
+        _ => None,
     };
     let onselectedchanged = {
         let navigator = navigator.clone();
@@ -79,12 +95,13 @@ pub fn editor() -> Html {
                 .unwrap()
         })
     };
+
     html! {
         <PageBase>
             <div class={"prose"}>
                 <h1>{"Editor"}</h1>
                 <p>{"This is the editor page. Here you can edit the content of the page selected."}</p>
-                <h2 class={"not-prose flex gap-2 items-center"}>{"Now editing:"}<ResourceSelect {resid} {lang} {onselectedchanged}/></h2>
+                <h2 class={"not-prose flex gap-2 items-center"}>{"Now editing:"}<ResourceSelect {resid} {lang} {onselectedchanged}/>{reload}</h2>
                 <p/>
             </div>
             <div class={"flex bg-base-300 rounded-lg p-2"}>
