@@ -1,8 +1,9 @@
+use crate::data::resources::ResId;
 use petompp_web_models::{
     error::Error,
     models::{
-        blog_data::BlogMetaData, credentials::Credentials, resource_data::ResourceData,
-        user::UserData,
+        blog_data::BlogMetaData, country::Country, credentials::Credentials,
+        resource_data::ResourceData, user::UserData,
     },
 };
 use reqwasm::http::*;
@@ -152,10 +153,10 @@ impl ApiClient {
         .map(|_| ())
     }
 
-    pub async fn get_resource(key: &str, lang: &str) -> Result<String, RequestError> {
+    pub async fn get_resource(key: &str, lang: &Country) -> Result<String, RequestError> {
         Self::send_json(
             Method::GET,
-            format!("api/v1/res/{}?lang={}", key, lang).as_str(),
+            format!("api/v1/res/{}?lang={}", key, lang.key()).as_str(),
             None,
             Option::<&String>::None,
         )
@@ -175,11 +176,10 @@ impl ApiClient {
     pub async fn update_resource(
         token: &str,
         key: &str,
-        lang: &str,
+        lang: &Country,
         value: &str,
     ) -> Result<(), RequestError> {
-        let resource = ResourceData::new_from_lang(key, lang, value)
-            .ok_or(RequestError::Parse("Invalid lang!".to_string()))?;
+        let resource = ResourceData::new_from_lang(key, lang, value);
         Self::send_json(
             Method::POST,
             format!("api/v1/res/{}", key).as_str(),
@@ -229,6 +229,26 @@ impl ApiClient {
             Option::<&String>::None,
         )
         .await
+    }
+
+    /// Ok((resources, posts))
+    pub async fn get_res_ids(token: &str) -> Result<(Vec<ResId>, Vec<ResId>), RequestError> {
+        Ok((
+            ApiClient::get_resource_keys(token)
+                .await?
+                .into_iter()
+                .map(|k| ResId::ResKey(k))
+                .collect::<Vec<_>>(),
+            {
+                let mut posts = ApiClient::get_posts_meta()
+                    .await?
+                    .into_iter()
+                    .map(|r| ResId::Blob(r.id))
+                    .collect::<Vec<_>>();
+                posts.dedup();
+                posts
+            },
+        ))
     }
 }
 

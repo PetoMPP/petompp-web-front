@@ -76,10 +76,12 @@ pub fn editable(props: &EditableProps) -> Html {
     let navigator = use_navigator().unwrap();
     let edit_onclick = {
         let (reskey, lang) = (reskey.clone(), lang.clone());
-        let reskey = ResId::ResKey((reskey, lang));
         Callback::from(move |_| {
             navigator
-                .push_with_query(&Route::Editor, &ResourceId::from(reskey.clone()))
+                .push_with_query(
+                    &Route::Editor,
+                    &ResourceId::from((ResId::ResKey(reskey.clone()), lang.clone())),
+                )
                 .unwrap()
         })
     };
@@ -98,7 +100,7 @@ pub fn editable(props: &EditableProps) -> Html {
             if markdown.is_some() {
                 return;
             }
-            if let Ok(md) = ApiClient::get_resource(reskey.as_str(), lang.key()).await {
+            if let Ok(md) = ApiClient::get_resource(reskey.as_str(), &lang).await {
                 markdown.set(Some(md));
             }
         })
