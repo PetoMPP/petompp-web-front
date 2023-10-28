@@ -124,10 +124,9 @@ pub fn error_modal() -> Html {
     }
 }
 
-pub fn show_error<T: 'static>(
+pub fn show_error(
     msg: impl Into<String>,
     redirect: Option<(&Route, &Navigator)>,
-    error_state: Option<UseStateHandle<Option<T>>>,
 ) {
     let msg: String = msg.into();
     let modal: HtmlDialogElement = web_sys::window()
@@ -151,7 +150,6 @@ pub fn show_error<T: 'static>(
         .unwrap()
         .get_element_by_id(ERROR_MODAL_BTN_ID)
         .unwrap();
-    let error_state_cb = error_state.map(|es| Box::new(move || es.set(None)));
     let redirect_cb = redirect.map(|(route, navigator)| {
         let navigator = navigator.clone();
         let route = route.clone();
@@ -160,11 +158,7 @@ pub fn show_error<T: 'static>(
     let cb = {
         let modal = modal.clone();
         Closure::wrap(Box::new(move || {
-            let error_state_cb = error_state_cb.clone();
             let redirect_cb = redirect_cb.clone();
-            if let Some(cb) = error_state_cb {
-                cb();
-            }
             if let Some(cb) = redirect_cb {
                 cb();
             }
