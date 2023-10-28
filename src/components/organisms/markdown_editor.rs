@@ -172,11 +172,7 @@ fn send_file(
             Err(e) => {
                 gloo::console::error!(e.to_string());
                 if let RequestError::Endpoint(413, e) = e {
-                    show_error(
-                        e.to_string(),
-                        None,
-                        Option::<UseStateHandle<Option<()>>>::None,
-                    );
+                    show_error(e.to_string(), None);
                 } else {
                     error_state.set(Some(e))
                 }

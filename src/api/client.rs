@@ -1,4 +1,7 @@
-use crate::data::resources::ResId;
+use crate::{
+    data::{resources::ResId, session::SessionStore},
+    router::route::Route,
+};
 use petompp_web_models::{
     error::Error,
     models::{
@@ -10,8 +13,11 @@ use reqwasm::http::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, fmt::Display};
+use yew::{html, virtual_dom::VNode};
+use yew_router::prelude::Redirect;
+use yewdux::prelude::Dispatch;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum RequestError {
     Endpoint(u16, Error),
     Parse(String),
@@ -21,6 +27,25 @@ pub enum RequestError {
 impl Display for RequestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{:?}", self))
+    }
+}
+
+impl RequestError {
+    pub fn handle_failed_auth(
+        &self,
+        session_dispatch: Dispatch<SessionStore>,
+    ) -> Result<(), VNode> {
+        if let Self::Endpoint(401..=403, _) = self {
+            session_dispatch.reduce(|_| {
+                SessionStore {
+                    token: None,
+                    user: None,
+                }
+                .into()
+            });
+            return Err(html! { <Redirect<Route> to={Route::Login} />});
+        }
+        Ok(())
     }
 }
 
