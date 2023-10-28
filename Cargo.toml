@@ -15,7 +15,7 @@ deref-derive = "0.1"
 gloo = "0.10"
 lazy_static = "1.4"
 markdown = "1.0.0-alpha.12"
-petompp-web-models = { git = "https://github.com/PetoMPP/petompp-web-models.git", branch = "0.3.1", features = [
+petompp-web-models = { git = "https://github.com/PetoMPP/petompp-web-models.git", branch = "0.3.2", features = [
     "timeago",
     "web-sys",
 ] }
