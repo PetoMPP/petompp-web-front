@@ -34,48 +34,6 @@ pub mod macros {
             }
         };
     }
-
-    /// I prefer this way of handling cloning dependencies rather than the way it is done in the use_effect_with_deps method.
-    #[macro_export]
-    macro_rules! use_effect_deps {
-        (|$($dep:ident),*| $block:block) => {
-            {
-                use yew::prelude::*;
-                $(
-                    let $dep = $dep.clone();
-                )*
-                use_effect(move || {
-                    $(
-                        let $dep = $dep.clone();
-                    )*
-                    $block
-                }
-                )
-            }
-        };
-    }
-
-    #[macro_export]
-    macro_rules! handle_api_error {
-        ($error:ident, $session_dispatch: ident, $redirect: expr) => {
-            use yew_router::prelude::*;
-            use $crate::components::atoms::modal::show_error;
-            use $crate::router::route::Route;
-            if let Some(error) = &*$error {
-                if let $crate::api::client::RequestError::Endpoint(401..=403, _) = error {
-                    $session_dispatch.reduce(|_| {
-                        SessionStore {
-                            token: None,
-                            user: None,
-                        }
-                        .into()
-                    });
-                    return html! { <Redirect<Route> to={Route::Login} />};
-                }
-                show_error(error.to_string(), $redirect);
-            }
-        };
-    }
 }
 
 pub mod ext {

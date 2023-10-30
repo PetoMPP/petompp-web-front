@@ -38,10 +38,8 @@ pub fn editor() -> Html {
             match &*state {
                 State::Ok(Some(((r, l), _))) if r == &resid && l == &lang => return,
                 State::Loading | State::Err(_) => return,
-                _ => {}
+                _ => state.set(State::Loading),
             };
-
-            state.set(State::Loading);
             spawn_local(async move {
                 state.set(match resid.get_value(&lang).await {
                     Ok(state) => State::Ok(Some(((resid, lang), state))),
