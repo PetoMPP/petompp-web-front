@@ -1,6 +1,6 @@
 use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
-use crate::{api::client::RequestError, data::session::SessionStore, handle_api_error};
+use crate::{api::client::RequestError, data::session::SessionStore};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
@@ -133,7 +133,11 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
             }
         })
     };
-    handle_api_error!(error_state, session_dispatch, None);
+    if let Some(error) = &*error_state {
+        if let Err(redirect) = error.handle_failed_auth(session_dispatch) {
+            return redirect;
+        }
+    }
 
     html! {
         <textarea id={TEXTAREA_ID} {oninput} {onpaste} {ondrop} class={"w-full font-mono bg-base-100 outline-none p-2 rounded-lg overflow-hidden resize-none leading-normal"}></textarea>

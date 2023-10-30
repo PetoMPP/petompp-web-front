@@ -1,6 +1,9 @@
 use crate::{
     api::client::ApiClient,
-    components::{atoms::flag::FlagSelect, state::State},
+    components::{
+        atoms::{flag::FlagSelect, loading::Loading},
+        state::State,
+    },
     data::{
         resources::{ResId, ResourceId},
         session::SessionStore,
@@ -51,9 +54,8 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
             let data = data.clone();
             match &*data {
                 State::Ok(Some(_)) | State::Loading | State::Err(_) => return,
-                _ => {}
+                _ => data.set(State::Loading),
             };
-            data.set(State::Loading);
             let token = token.clone();
             spawn_local(async move {
                 match ApiClient::get_res_ids(token.as_str()).await {
@@ -88,9 +90,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
             }
         }
         State::Ok(None) | State::Loading => html! {
-            <div class={"btn pointer-events-none"}>
-                <span class={"flex mx-auto loading loading-ring loading-lg"}/>
-            </div>
+            <Loading resource={"available resources".to_string()} />
         },
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
