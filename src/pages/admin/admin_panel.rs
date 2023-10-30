@@ -1,5 +1,5 @@
 use crate::{
-    data::session::SessionStore,
+    data::{resources::ResId, session::SessionStore},
     pages::{not_found::NotFound, page_base::EditablePage},
 };
 use petompp_web_models::models::user::RoleData;
@@ -14,6 +14,6 @@ pub fn admin_panel() -> Html {
         return html! {<NotFound />};
     };
     html! {
-        <EditablePage reskey={RES_KEY.to_string()}/ >
+        <EditablePage resid={ResId::ResKey(RES_KEY.to_string())}/ >
     }
 }

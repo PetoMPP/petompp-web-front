@@ -1,6 +1,9 @@
 use crate::api::client::ApiClient;
+use crate::components::atoms::loading::Loading;
+use crate::components::state::State;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
+use crate::data::resources::ResId;
 use crate::data::session::SessionStore;
 use crate::router::blog::BlogRoute;
 use crate::{
@@ -21,76 +24,76 @@ pub fn blog() -> Html {
     let (session_store, _) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let navigator = use_navigator().unwrap();
-    let posts_int = use_mut_ref(|| None);
-    let posts = use_state(|| None);
+    let data = use_state(|| State::Ok(None));
     use_effect_with_deps(
-        move |(posts_int, tags, curr, posts)| {
-            let posts_int = posts_int.clone();
-            let tags = tags.clone();
-            let curr = curr.clone();
-            let posts = posts.clone();
+        move |data| {
+            let data = data.clone();
+            match &*data {
+                State::Loading | State::Err(_) | State::Ok(Some(_)) => return,
+                _ => data.set(State::Loading),
+            }
             spawn_local(async move {
-                let posts_int = posts_int.clone();
-                if *posts_int.borrow() == None {
-                    *posts_int.borrow_mut() = Some(
-                        ApiClient::get_posts_meta()
-                            .await
-                            .unwrap()
-                            .into_iter()
-                            .collect::<Vec<_>>(),
-                    );
-                }
-                posts.set(Some(
-                    posts_int
-                        .borrow()
-                        .clone()
-                        .unwrap_or_default()
-                        .into_iter()
-                        .filter(|meta| {
-                            tags.is_empty()
-                                || tags.tags().iter().any(|t| meta.tags.tags().contains(&t))
-                        })
-                        .filter(|meta| meta.lang == curr)
-                        .collect::<Vec<_>>(),
-                ));
+                match ApiClient::get_posts_meta().await {
+                    Ok(posts) => data.set(State::Ok(Some(posts))),
+                    Err(e) => data.set(State::Err(e)),
+                };
             });
         },
-        (
-            posts_int.clone(),
-            tags.clone(),
-            locales_store.curr.clone(),
-            posts.clone(),
-        ),
+        data.clone(),
     );
-    let posts = (*posts)
-        .clone()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|meta| {
+    let posts = match &*data {
+        State::Ok(Some(posts)) => {
+            let summaries = posts
+                .clone()
+                .into_iter()
+                .filter(|meta| {
+                    tags.is_empty() || tags.tags().iter().any(|t| meta.tags.tags().contains(&t))
+                })
+                .filter(|meta| meta.lang == locales_store.curr)
+                .map(|meta| {
+                    html! {
+                        <BlogSummary {meta}/>
+                    }
+                });
+            let new_post_button = match &session_store.user {
+                Some(u) if u.role == RoleData::Admin => {
+                    let onclick = Callback::from(move |_| navigator.push(&BlogRoute::New));
+                    Some(html! {
+                        <div class={"flex w-full justify-end py-2"}>
+                            <button class={"flex btn btn-primary btn-outline"} {onclick}>
+                                {locales_store.get(TK::CreateNewBlogPost)}
+                            </button>
+                        </div>
+                    })
+                }
+                _ => None,
+            };
+
             html! {
-                <BlogSummary {meta}/>
-            }
-        });
-    let new_post_button = match &session_store.user {
-        Some(u) if u.role == RoleData::Admin => {
-            let onclick = Callback::from(move |_| navigator.push(&BlogRoute::New));
-            Some(html! {
-                <div class={"flex w-full justify-end py-2"}>
-                    <button class={"flex btn btn-primary btn-outline"} {onclick}>
-                        {locales_store.get(TK::CreateNewBlogPost)}
-                    </button>
+                <>
+                {new_post_button}
+                <div class={"flex flex-col gap-2"}>
+                    {for summaries}
                 </div>
-            })
+                </>
+            }
         }
-        _ => None,
+        State::Loading | State::Ok(None) => html! {
+            <Loading resource={"blog posts".to_string()} />
+        },
+        State::Err(e) => {
+            html! {
+                <>
+                <h3 class={"mx-auto py-4 text-xl font-semibold"}>{"Failed to load posts!"}</h3>
+                <p>{e.to_string()}</p>
+                </>
+            }
+        }
     };
     html! {
         <PageBase>
-        <Editable reskey={"blog-intro".to_string()}/>
-        {new_post_button}
-        <div class={"flex flex-col gap-2"}>
-            {for posts}
-        </div>
+        <Editable resid={ResId::ResKey("blog-intro".to_string())}/>
+        {posts}
         </PageBase>
     }
 }

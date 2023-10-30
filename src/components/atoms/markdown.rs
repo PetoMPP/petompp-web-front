@@ -1,9 +1,10 @@
-use crate::api::client::ApiClient;
+use crate::components::atoms::loading::Loading;
+use crate::components::state::State;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
 use crate::data::resources::{ResId, ResourceId};
 use crate::data::session::SessionStore;
-use crate::{router::route::Route, use_effect_deps};
+use crate::router::route::Route;
 use petompp_web_models::models::user::RoleData;
 use wasm_bindgen::JsCast;
 use web_sys::Element;
@@ -49,12 +50,14 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
         Some(()) => "prose w-full max-w-full",
         None => "prose w-full max-w-full pointer-events-none",
     };
-    use_effect_deps!(|interactive, id| {
-        if interactive.is_some() {
-            make_links_clickable(navigator.clone(), id.as_str());
-        }
-        || {}
-    });
+    use_effect_with_deps(
+        |(interactive, id, navigator)| {
+            if interactive.is_some() {
+                make_links_clickable(navigator.clone(), id.as_str());
+            }
+        },
+        (interactive, id.clone(), navigator.clone()),
+    );
 
     html! {
         <div {class} id={id.to_string()}>
@@ -65,53 +68,83 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
 
 #[derive(PartialEq, Properties)]
 pub struct EditableProps {
-    pub reskey: String,
+    pub resid: ResId,
 }
 
 #[function_component(Editable)]
 pub fn editable(props: &EditableProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
-    let (session_store, _) = use_store::<SessionStore>();
-    let (reskey, lang) = (props.reskey.clone(), locales_store.curr.clone());
-    let navigator = use_navigator().unwrap();
-    let edit_onclick = {
-        let (reskey, lang) = (reskey.clone(), lang.clone());
-        Callback::from(move |_| {
-            navigator
-                .push_with_query(
-                    &Route::Editor,
-                    &ResourceId::from((ResId::ResKey(reskey.clone()), lang.clone())),
-                )
-                .unwrap()
-        })
-    };
-    let edit_button = session_store.user.as_ref().and_then(|u| {
-        if u.role != RoleData::Admin {
-            return None;
-        }
-        Some(html! {
-            <button class={"btn absolute top-5 right-5 btn-accent btn-xs btn-outline"} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
-        })
-    });
-    let markdown = use_state_eq(|| None);
+    let (_, session_dispatch) = use_store::<SessionStore>();
+    let (resid, lang) = (props.resid.clone(), locales_store.curr.clone());
+    let markdown = use_state_eq(|| State::Ok(None));
     {
         let markdown = markdown.clone();
         spawn_local(async move {
-            if markdown.is_some() {
-                return;
-            }
-            if let Ok(md) = ApiClient::get_resource(reskey.as_str(), &lang).await {
-                markdown.set(Some(md));
+            match &*markdown {
+                State::Ok(Some((r, l, _))) if r == &resid && l == &lang => return,
+                State::Loading | State::Err(_) => return,
+                _ => markdown.set(State::Loading),
+            };
+
+            match resid.get_value(&lang).await {
+                Ok(md) => markdown.set(State::Ok(Some((resid, lang, md)))),
+                Err(e) => markdown.set(State::Err(e)),
             }
         })
     };
-    let markdown = (*markdown).clone().unwrap_or_default();
+    let markdown = match &*markdown {
+        State::Ok(Some((_, _, md))) => html! {
+            <div class={"animate-fade"}>
+            <Markdown markdown={md.clone()} interactive={Some(())} allowhtml={true}/>
+            </div>
+        },
+        State::Ok(None) | State::Loading => html! {
+            <Loading resource={"page content".to_string()} />
+        },
+        State::Err(e) => {
+            if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
+                return redirect;
+            }
+            html! {
+                <p class={"text-xl text-error font-semibold"}>{e.to_string()}</p>
+            }
+        }
+    };
 
     html! {
         <>
-        {edit_button}
-        <Markdown {markdown} interactive={Some(())} allowhtml={true}/>
+        <EditButton resid={props.resid.clone()} />
+        {markdown}
         </>
+    }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+struct EditButtonProps {
+    resid: ResId,
+}
+
+#[function_component(EditButton)]
+fn edit_button(props: &EditButtonProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
+    let (session_store, _) = use_store::<SessionStore>();
+    let navigator = use_navigator().unwrap();
+    let (resid, lang) = (props.resid.clone(), locales_store.curr.clone());
+    let edit_onclick = Callback::from(move |_| {
+        navigator
+            .push_with_query(
+                &Route::Editor,
+                &ResourceId::from((resid.clone(), lang.clone())),
+            )
+            .unwrap()
+    });
+
+    if session_store.user.as_ref().map(|u| &u.role) != Some(&RoleData::Admin) {
+        return html! {};
+    }
+
+    html! {
+        <button class={"btn absolute top-5 right-5 btn-accent btn-xs btn-outline"} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
     }
 }
 
