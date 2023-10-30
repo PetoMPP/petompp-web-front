@@ -1,4 +1,4 @@
-use crate::components::atoms::markdown::{Editable, EditableProps};
+use crate::components::atoms::markdown::{EditableProps, Editable};
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
@@ -22,7 +22,7 @@ pub fn page_base(props: &PageBaseProps) -> Html {
 pub fn editable_page_base(props: &EditableProps) -> Html {
     html! {
         <PageBase>
-            <Editable reskey={props.reskey.clone()}/>
+            <Editable resid={props.resid.clone()}/ >
         </PageBase>
     }
 }
