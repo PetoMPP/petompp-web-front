@@ -1,46 +1,71 @@
 use crate::{
     api::client::ApiClient,
     async_event,
-    components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+    components::{
+        atoms::{modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore}, loading::Loading},
+        state::State,
+    },
     data::{
         locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
-    handle_api_error,
 };
 use petompp_web_models::models::user::UserData;
-use yew::{platform::spawn_local, prelude::*};
+use yew::{platform::spawn_local, prelude::*, virtual_dom::VNode};
 use yewdux::prelude::*;
 
 #[function_component(UserManager)]
 pub fn user_manager() -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
-    let navigator = use_navigator().unwrap();
     let token = session_store.token.clone().unwrap_or_default();
-    let error_state = use_state_eq(|| None);
-    let reload = use_state_eq(|| true);
-    let user_data = use_state_eq(Vec::new);
-    let mark_to_reload = {
-        let reload = reload.clone();
-        Callback::from(move |_| reload.set(true))
-    };
-    if *reload {
-        reload.set(false);
-        let error_state = error_state.clone();
-        let user_data = user_data.clone();
-        spawn_local(async move {
-            match ApiClient::get_users(&token).await {
-                Ok(users) => user_data.set(users),
-                Err(error) => error_state.set(Some(error)),
+    let data = use_state_eq(|| State::Ok(None));
+    use_effect_with_deps(
+        |data| {
+            let data = data.clone();
+            match &*data {
+                State::Ok(Some(_)) | State::Loading | State::Err(_) => return,
+                _ => data.set(State::Loading),
             };
-        })
-    }
-    handle_api_error!(
-        error_state,
-        session_dispatch,
-        Some((&Route::Home, &navigator))
+            spawn_local(async move {
+                match ApiClient::get_users(&token).await {
+                    Ok(users) => data.set(State::Ok(Some(users))),
+                    Err(error) => data.set(State::Err(error)),
+                };
+            })
+        },
+        data.clone(),
     );
+    let reload = {
+        let data = data.clone();
+        Callback::from(move |_| data.set(State::Ok(None)))
+    };
+    let list = match &*data {
+        State::Ok(Some(users)) => users
+            .iter()
+            .cloned()
+            .map(|user| html! {<UserRow {user} reload={reload.clone()} />})
+            .collect::<VNode>(),
+        State::Loading | State::Ok(None) => html! {
+            <Loading />
+        },
+        State::Err(e) => {
+            if let Err(redirect) = e.handle_failed_auth(session_dispatch.clone()) {
+                return redirect;
+            }
+            html! {
+                <>
+                <h3 class={"mx-auto py-4 text-xl font-semibold"}>{"Failed to load users!"}</h3>
+                <p>{e.to_string()}</p>
+                </>
+            }
+        }
+    };
+    if let State::Err(e) = &*data {
+        if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
+            return redirect;
+        }
+    }
     html! {
         <table class={"table"}>
             <thead>
@@ -51,7 +76,7 @@ pub fn user_manager() -> Html {
                 </tr>
             </thead>
             <tbody class={"items-center"}>
-                {for user_data.iter().map(|user| html!{<UserRow user={user.clone()} reload={mark_to_reload.clone()} />})}
+                {list}
             </tbody>
         </table>
     }
@@ -84,7 +109,6 @@ fn activate_button(props: &UserRowProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, dispatch) = use_store::<ModalStore>();
-    let navigator = use_navigator().unwrap();
     let error_state = use_state_eq(|| None);
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|props, token, error_state| {
@@ -93,11 +117,11 @@ fn activate_button(props: &UserRowProps) -> Html {
             Err(error) => error_state.set(Some(error)),
         }
     });
-    handle_api_error!(
-        error_state,
-        session_dispatch,
-        Some((&Route::Home, &navigator))
-    );
+    if let Some(error) = &*error_state {
+        if let Err(redirect) = error.handle_failed_auth(session_dispatch) {
+            return redirect;
+        }
+    }
     let (onclick, class) = match props.user.deleted_at.is_some() || props.user.confirmed {
         true => (
             None,
@@ -128,7 +152,6 @@ fn delete_button(props: &UserRowProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, dispatch) = use_store::<ModalStore>();
-    let navigator = use_navigator().unwrap();
     let error_state = use_state_eq(|| None);
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|props, token, error_state| {
@@ -137,11 +160,11 @@ fn delete_button(props: &UserRowProps) -> Html {
             Err(error) => error_state.set(Some(error)),
         }
     });
-    handle_api_error!(
-        error_state,
-        session_dispatch,
-        Some((&Route::Home, &navigator))
-    );
+    if let Some(error) = &*error_state {
+        if let Err(redirect) = error.handle_failed_auth(session_dispatch) {
+            return redirect;
+        }
+    }
     let (onclick, class) = match props.user.deleted_at.is_some() {
         true => (
             None,
