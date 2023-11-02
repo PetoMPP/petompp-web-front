@@ -1,7 +1,7 @@
 use crate::{
     api::{self, client::ApiClient},
     async_event,
-    components::atoms::{modal::show_error, text_input::TextInput},
+    components::atoms::{modal::show_error, text_input::{TextInput, InputType}},
     data::{
         locales::{localizable::Localizable, store::LocalesStore, tk::TK},
         session::SessionStore,
@@ -72,11 +72,11 @@ pub fn login() -> Html {
                 <span class={"label-text text-lg lg:text-2xl"}>{locales_store.get(TK::Login)}</span>
             </label>
             <TextInput
-                label={locales_store.get(TK::Username)} itype={"text".to_string()}
+                label={locales_store.get(TK::Username)} itype={InputType::Text} enabled={true}
                 placeholder={locales_store.get(TK::TypeUsername)} autocomplete={"username"}
                 onchange={onchange_username} error={(*error_state).clone().map(|_| String::new())}/>
             <TextInput
-                label={locales_store.get(TK::Password)} itype={"password".to_string()}
+                label={locales_store.get(TK::Password)} itype={InputType::Password} enabled={true}
                 placeholder={locales_store.get(TK::TypePassword)} autocomplete={"current-password"}
                 onchange={onchange_password} error={(*error_state).clone()}/>
             <button class={"btn btn-primary shadow-md lg:text-xl mt-4"}>{locales_store.get(TK::Login)}</button>
