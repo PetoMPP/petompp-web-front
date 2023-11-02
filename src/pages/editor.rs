@@ -1,4 +1,8 @@
+use crate::api::client::ApiClient;
+use crate::components::atoms::collapse::Collapse;
+use crate::components::atoms::loading::Loading;
 use crate::components::atoms::resource_select::ResourceSelect;
+use crate::components::organisms::blog::blog_meta_editor::BlogMetaEditor;
 use crate::components::organisms::markdown_editor::MarkdownEditor;
 use crate::components::state::State;
 use crate::data::resources::{ResId, ResourceId};
@@ -41,16 +45,30 @@ pub fn editor() -> Html {
                 _ => state.set(State::Loading),
             };
             spawn_local(async move {
-                state.set(match resid.get_value(&lang).await {
-                    Ok(state) => State::Ok(Some(((resid, lang), state))),
-                    Err(e) => State::Err(e),
-                })
-            });
+                let value = match resid.get_value(&lang).await {
+                    Ok(state) => state,
+                    Err(e) => {
+                        state.set(State::Err(e));
+                        return;
+                    }
+                };
+                let meta = match &resid {
+                    ResId::Blob(p) => match ApiClient::get_post_meta(&p, lang.key()).await {
+                        Ok(meta) => Some(meta),
+                        Err(e) => {
+                            state.set(State::Err(e));
+                            return;
+                        }
+                    },
+                    _ => None,
+                };
+                state.set(State::Ok(Some(((resid, lang), (value, meta)))));
+            })
         },
         (resid.clone(), lang.clone(), state.clone()),
     );
     let editor = match &*state {
-        State::Ok(Some(((_, _), s))) => {
+        State::Ok(Some(((_, _), (s, _)))) => {
             html! { <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/> }
         }
         State::Ok(None) => html! {
@@ -76,13 +94,16 @@ pub fn editor() -> Html {
         }
     };
     let reload = match &*state {
-        State::Err(_) => Some(html! {
-            <button class={"btn btn-square"} onclick={Callback::from(move |_| {
-                state.set(State::Ok(None));
-            })}>
-                <div class={"bg-base-content h-10 w-10"} style={get_svg_bg_mask_style("/img/ui/reload.svg")}/>
-            </button>
-        }),
+        State::Err(_) => {
+            let state = state.clone();
+            Some(html! {
+                <button class={"btn btn-square"} onclick={Callback::from(move |_| {
+                    state.set(State::Ok(None));
+                })}>
+                    <div class={"bg-base-content h-10 w-10"} style={get_svg_bg_mask_style("/img/ui/reload.svg")}/>
+                </button>
+            })
+        }
         _ => None,
     };
     let onselectedchanged = {
@@ -93,6 +114,20 @@ pub fn editor() -> Html {
                 .unwrap()
         })
     };
+    let meta_editor = match &resid {
+        Some(ResId::Blob(_)) => match &*state {
+            State::Ok(Some(((_, _), (_, Some(meta))))) => Some(html! {
+                <Collapse label={"Blog Post Metadata"}>
+                    <BlogMetaEditor data={meta.clone()} ondatachanged={Callback::noop()} />
+                </Collapse>
+            }),
+            State::Loading => {
+                Some(html! { <Loading resource={"blog post metadata".to_string()} /> })
+            }
+            _ => None,
+        },
+        _ => None,
+    };
 
     html! {
         <PageBase>
@@ -102,8 +137,11 @@ pub fn editor() -> Html {
                 <h2 class={"not-prose flex gap-2 items-center"}>{"Now editing:"}<ResourceSelect {resid} {lang} {onselectedchanged}/>{reload}</h2>
                 <p/>
             </div>
-            <div class={"flex bg-base-300 rounded-lg p-2"}>
-                {editor}
+            <div class={"flex flex-col gap-6"}>
+                {meta_editor}
+                <div class={"border rounded-lg p-2 shadow-lg"}>
+                    {editor}
+                </div>
             </div>
         </PageBase>
     }
