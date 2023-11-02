@@ -1,5 +1,5 @@
 use crate::api::client::ApiClient;
-use crate::components::atoms::text_input::TextInput;
+use crate::components::atoms::text_input::{InputType, TextInput};
 use crate::data::locales::localizable::Localizable;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
@@ -102,11 +102,11 @@ pub fn register() -> Html {
                 <span class={"label-text text-lg lg:text-2xl"}>{locales_store.get(TK::Register)}</span>
             </label>
             <TextInput
-                label={locales_store.get(TK::Username)} itype={"text".to_string()}
+                label={locales_store.get(TK::Username)} itype={InputType::Text} enabled={true}
                 placeholder={locales_store.get(TK::TypeUsername)} autocomplete={"username"}
                 onchange={onchange_username} error={username_error}/>
             <TextInput
-                label={locales_store.get(TK::Password)} itype={"password".to_string()}
+                label={locales_store.get(TK::Password)} itype={InputType::Password} enabled={true}
                 placeholder={locales_store.get(TK::TypePassword)} autocomplete={"new-password"}
                 onchange={onchange_password} error={password_error}/>
             <button class={"btn btn-primary shadow-md lg:text-xl mt-4"}>{locales_store.get(TK::Register)}</button>
