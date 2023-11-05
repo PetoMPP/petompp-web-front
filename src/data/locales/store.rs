@@ -1,11 +1,10 @@
+use super::{localizable::Localizable, tk::TK};
 use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use strum::IntoEnumIterator;
 use wasm_bindgen::{prelude::Closure, JsCast};
 use yewdux::prelude::*;
-
-use super::{localizable::Localizable, tk::TK};
 
 #[derive(PartialEq, Clone, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
