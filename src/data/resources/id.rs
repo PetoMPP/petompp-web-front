@@ -49,7 +49,7 @@ impl From<(ResId, Country)> for ResourceId {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, PartialOrd, Ord, Eq)]
 pub enum ResId {
     ResKey(String),
     Blob(String),

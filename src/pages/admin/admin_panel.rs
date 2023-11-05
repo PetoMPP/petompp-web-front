@@ -1,5 +1,5 @@
 use crate::{
-    data::{resources::ResId, session::SessionStore},
+    data::{resources::id::ResId, session::SessionStore},
     pages::{not_found::NotFound, page_base::EditablePage},
 };
 use petompp_web_models::models::user::RoleData;
