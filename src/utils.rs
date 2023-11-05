@@ -55,6 +55,48 @@ pub mod ext {
 
 pub mod style {
     pub fn get_svg_bg_mask_style(path: &str) -> String {
-        format!("-webkit-mask: url({}) no-repeat center;mask: url({}) no-repeat center;", path, path)
+        format!(
+            "-webkit-mask: url({}) no-repeat center;mask: url({}) no-repeat center;",
+            path, path
+        )
+    }
+}
+
+pub mod js {
+    use wasm_bindgen::JsCast;
+    use web_sys::{Element, HtmlInputElement};
+
+    pub fn set_textarea_text(value: &str, id: &str) {
+        let element: HtmlInputElement = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .get_element_by_id(id)
+            .unwrap()
+            .unchecked_into();
+        element.set_value(value);
+        set_textarea_height(&element);
+    }
+
+    pub fn set_textarea_height(element: &Element) {
+        let body = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .body()
+            .unwrap();
+        body.set_attribute(
+            "style",
+            format!("height: {}px;", body.client_height()).as_str(),
+        )
+        .unwrap();
+        element.set_attribute("style", "height: auto;").unwrap();
+        let scroll_height = element.scroll_height();
+        if scroll_height > element.client_height() {
+            element
+                .set_attribute("style", format!("height: {}px;", scroll_height).as_str())
+                .unwrap();
+        }
+        body.set_attribute("style", "height: auto;").unwrap();
     }
 }

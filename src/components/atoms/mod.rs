@@ -1,5 +1,7 @@
+pub mod collapse;
 pub mod date_display;
 pub mod flag;
+pub mod label;
 pub mod link;
 pub mod loading;
 pub mod logo;
@@ -7,4 +9,3 @@ pub mod markdown;
 pub mod modal;
 pub mod resource_select;
 pub mod text_input;
-pub mod collapse;

@@ -108,9 +108,9 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     });
 
     html! {
-        <div class={"flex flex-row gap-4"}>
-            <div class={"dropdown min-w-[16rem]"}>
-            <label class={"btn w-full"} tabindex={"0"}>{props.resid.as_ref().map(|r| format!("{}: {}", r.type_str(), r.id())).unwrap_or("Select a resource!".to_string())}</label>
+        <div class={"flex flex-row gap-4 w-full lg:w-auto"}>
+            <div class={"dropdown grow lg:min-w-[12rem]"}>
+            <label class={"btn flex grow"} tabindex={"0"}>{props.resid.as_ref().map(|r| r.id().to_string()).unwrap_or("Select a resource!".to_string())}</label>
             <ul tabindex={"0"} class={"dropdown-content w-full flex flex-col mt-1 gap-1 z-10"}>
                 {list}
             </ul>
@@ -149,8 +149,8 @@ fn resource_list(props: &ResourceListProps) -> Html {
     let res_into_button = |r: ResId| {
         let id = r.id();
         let class = match props.currentresid.as_ref() == Some(&r) {
-            true => "btn btn-primary",
-            false => "btn",
+            true => "btn btn-primary flex",
+            false => "btn flex",
         };
         html! {
             <li onclick={get_btn_onclick(r.clone())} {class}>{id}</li>
@@ -179,14 +179,14 @@ fn resource_list(props: &ResourceListProps) -> Html {
     let elements = elements[*page].clone();
 
     html! {
-        <>
-        <li class={"join flex w-full"}>
-            <a onclick={dec_page} class={"join-item flex btn"}>{"«"}</a>
-            <a {onclick} class={"join-item flex grow shrink btn no-animation content-center"}><div>{text}</div><div>{format!("{}/{}",*page + 1, page_count)}</div></a>
-            <a onclick={inc_page} class={"join-item flex btn"}>{"»"}</a>
-        </li>
-        {for elements}
-        </>
+        <div class={"flex flex-col gap-1"}>
+            <li class={"join flex w-full"}>
+                <a onclick={dec_page} class={"join-item flex btn"}>{"«"}</a>
+                <a {onclick} class={"join-item px-0.5 flex grow shrink btn no-animation content-center"}>{format!("{} {}/{}",text, *page + 1, page_count)}</a>
+                <a onclick={inc_page} class={"join-item flex btn"}>{"»"}</a>
+            </li>
+            {for elements}
+        </div>
     }
 }
 
