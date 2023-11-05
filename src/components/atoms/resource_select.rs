@@ -5,7 +5,7 @@ use crate::{
         state::State,
     },
     data::{
-        resources::{ResId, ResourceId},
+        resources::id::{ResId, ResourceId},
         session::SessionStore,
     },
 };

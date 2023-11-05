@@ -2,7 +2,7 @@ use crate::components::atoms::loading::Loading;
 use crate::components::state::State;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
-use crate::data::resources::{ResId, ResourceId};
+use crate::data::resources::id::{ResId, ResourceId};
 use crate::data::session::SessionStore;
 use crate::router::route::Route;
 use petompp_web_models::models::user::RoleData;

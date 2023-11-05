@@ -1,5 +1,5 @@
 use crate::{
-    data::{resources::ResId, session::SessionStore},
+    data::{resources::id::ResId, session::SessionStore},
     router::route::Route,
 };
 use petompp_web_models::{
