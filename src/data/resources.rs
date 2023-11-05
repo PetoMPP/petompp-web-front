@@ -62,13 +62,6 @@ impl ResId {
         }
     }
 
-    pub fn type_str(&self) -> &'static str {
-        match self {
-            Self::ResKey(_) => "resource",
-            Self::Blob(_) => "blog post",
-        }
-    }
-
     pub async fn get_value(&self, lang: &Country) -> Result<String, RequestError> {
         match self {
             Self::ResKey(reskey) => ApiClient::get_resource(reskey.as_str(), lang).await,
