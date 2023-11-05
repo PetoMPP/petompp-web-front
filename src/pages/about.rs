@@ -1,4 +1,4 @@
-use crate::{data::resources::ResId, pages::page_base::EditablePage};
+use crate::{data::resources::id::ResId, pages::page_base::EditablePage};
 use yew::prelude::*;
 
 #[function_component(About)]

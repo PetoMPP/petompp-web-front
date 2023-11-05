@@ -5,7 +5,7 @@ use crate::components::atoms::resource_select::ResourceSelect;
 use crate::components::organisms::blog::blog_meta_editor::BlogMetaEditor;
 use crate::components::organisms::markdown_editor::MarkdownEditor;
 use crate::components::state::State;
-use crate::data::resources::{ResId, ResourceId};
+use crate::data::resources::id::{ResId, ResourceId};
 use crate::data::session::SessionStore;
 use crate::pages::page_base::PageBase;
 use crate::router::route::Route;

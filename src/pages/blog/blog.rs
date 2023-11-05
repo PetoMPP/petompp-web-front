@@ -3,7 +3,7 @@ use crate::components::atoms::loading::Loading;
 use crate::components::state::State;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
-use crate::data::resources::ResId;
+use crate::data::resources::id::ResId;
 use crate::data::session::SessionStore;
 use crate::router::blog::BlogRoute;
 use crate::{
