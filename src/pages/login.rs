@@ -1,7 +1,10 @@
 use crate::{
     api::{self, client::ApiClient},
     async_event,
-    components::atoms::{modal::show_error, text_input::{TextInput, InputType}},
+    components::atoms::{
+        modal::show_error,
+        text_input::{InputType, TextInput},
+    },
     data::{
         locales::{localizable::Localizable, store::LocalesStore, tk::TK},
         session::SessionStore,
@@ -10,7 +13,6 @@ use crate::{
     router::route::Route,
 };
 use petompp_web_models::models::credentials::Credentials;
-use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::use_store;
@@ -26,18 +28,16 @@ pub fn login() -> Html {
     let onchange_username = {
         let error_state = error_state.clone();
         let form_data = form_data.clone();
-        Callback::from(move |e: InputEvent| {
-            let target_element = e.target_unchecked_into::<HtmlInputElement>();
-            form_data.borrow_mut().name = target_element.value();
+        Callback::from(move |e| {
+            form_data.borrow_mut().name = e;
             error_state.set(Option::None);
         })
     };
     let onchange_password = {
         let error_state = error_state.clone();
         let form_data = form_data.clone();
-        Callback::from(move |e: InputEvent| {
-            let target_element = e.target_unchecked_into::<HtmlInputElement>();
-            form_data.borrow_mut().password = target_element.value();
+        Callback::from(move |e| {
+            form_data.borrow_mut().password = e;
             error_state.set(Option::None);
         })
     };
