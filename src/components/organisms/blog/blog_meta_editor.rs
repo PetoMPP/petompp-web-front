@@ -1,7 +1,7 @@
 use crate::{
     components::atoms::{
         label::Label,
-        text_input::{InputType, TextInput},
+        text_input::{InputType, TextInput, TextareaInput},
     },
     utils::style::get_svg_bg_mask_style,
 };
@@ -35,7 +35,7 @@ pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
             <TextInput label={"Created"} itype={InputType::Text} enabled={false} value={props.data.as_ref().map(|d| d.created.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
             <TextInput label={"Updated"} itype={InputType::Text} enabled={false} value={props.data.as_ref().map(|d| d.updated.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
             <TextInput label={"Image"} itype={InputType::Text} enabled={true} value={props.data.as_ref().map(|d| d.image.clone()).unwrap_or_default()}/>
-            <TextInput label={"Summary"} itype={InputType::Textarea} enabled={true} value={props.data.as_ref().map(|d| d.summary.clone()).unwrap_or_default()}/>
+            <TextareaInput label={"Summary"} enabled={true} value={props.data.as_ref().map(|d| d.summary.clone()).unwrap_or_default()}/>
         </>
     }
 }
