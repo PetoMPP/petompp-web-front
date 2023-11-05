@@ -11,7 +11,7 @@ pub struct FlagProps {
 #[function_component(Flag)]
 pub fn flag(props: &FlagProps) -> Html {
     html! {
-        <img src={format!("/img/flags/{}.svg", props.country.key())} class={"w-12 h-8 rounded-xl"} />
+        <img src={format!("/img/flags/{}.svg", props.country.key())} class={"min-w-[3rem] w-12 h-8 rounded-xl"} />
     }
 }
 
@@ -42,15 +42,15 @@ pub fn flag_select(props: &FlagSelectProps) -> Html {
     };
     html! {
         <div class={"dropdown block"}>
-            <label class={"flex btn btn-md"} tabindex={"0"}>
+            <label class={"btn p-1"} tabindex={"0"}>
             <Flag country={props.country} />
             </label>
-            <ul tabindex={"0"} class={"dropdown-content bg-base-200 hover:bg-base-300 mt-1 rounded-md flex z-[1]"}>
+            <ul tabindex={"0"} class={"dropdown-content bg-base-200 hover:bg-base-300 mt-1 rounded-md flex z-10"}>
             { for Country::iter()
                 .filter(|c| c != &props.country)
                 .map(|country|
                     html! {
-                        <li class={"flex btn btn-md"} onclick={get_onclick(&country)}>
+                        <li class={"btn p-1"} onclick={get_onclick(&country)}>
                             <Flag {country} />
                         </li>
                     }

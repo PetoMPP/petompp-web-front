@@ -11,7 +11,6 @@ use crate::{
 use petompp_web_models::error::{Error, UsernameValidationError, ValidationError};
 use petompp_web_models::models::credentials::Credentials;
 use std::fmt::Display;
-use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
@@ -41,18 +40,16 @@ pub fn register() -> Html {
     let onchange_username = {
         let error_state = error_state.clone();
         let form_data = form_data.clone();
-        Callback::from(move |e: InputEvent| {
-            let target_element = e.target_unchecked_into::<HtmlInputElement>();
-            form_data.borrow_mut().name = target_element.value();
+        Callback::from(move |e| {
+            form_data.borrow_mut().name = e;
             error_state.set(Option::None);
         })
     };
     let onchange_password = {
         let error_state = error_state.clone();
         let form_data = form_data.clone();
-        Callback::from(move |e: InputEvent| {
-            let target_element = e.target_unchecked_into::<HtmlInputElement>();
-            form_data.borrow_mut().password = target_element.value();
+        Callback::from(move |e| {
+            form_data.borrow_mut().password = e;
             error_state.set(Option::None);
         })
     };

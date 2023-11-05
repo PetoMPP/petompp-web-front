@@ -900,7 +900,7 @@ dependencies = [
 [[package]]
 name = "petompp-web-models"
 version = "0.3.2"
-source = "git+https://github.com/PetoMPP/petompp-web-models.git?branch=0.3.2#f0c551a3969c3bd710c25d317e8e1f327c4b6b76"
+source = "git+https://github.com/PetoMPP/petompp-web-models.git?branch=0.3.2#4090203d10365098f4050a25e6333b29979576de"
 dependencies = [
  "chrono",
  "deref-derive",

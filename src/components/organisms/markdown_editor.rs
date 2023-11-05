@@ -1,10 +1,11 @@
 use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
+use crate::utils::js::{set_textarea_height, set_textarea_text};
 use crate::{api::client::RequestError, data::session::SessionStore};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use web_sys::{ClipboardEvent, Element, HtmlInputElement};
+use web_sys::{ClipboardEvent, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*};
 use yewdux::prelude::*;
 
@@ -41,7 +42,7 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
                     props.state.clone()
                 }
             };
-            set_textarea_text(val.as_str());
+            set_textarea_text(val.as_str(), TEXTAREA_ID);
             markdown.set(val);
             last_state.replace(props.state.clone());
             move || {}
@@ -213,42 +214,8 @@ fn insert_img_into_textarea(img_url: &str) -> Option<String> {
             img_url,
             &value.chars().skip(sel_end).collect::<String>()
         );
-        set_textarea_text(new_value.as_str());
+        set_textarea_text(new_value.as_str(), TEXTAREA_ID);
         return Some(new_value);
     }
     None
-}
-
-fn set_textarea_text(value: &str) {
-    let element: HtmlInputElement = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .get_element_by_id(TEXTAREA_ID)
-        .unwrap()
-        .unchecked_into();
-    element.set_value(value);
-    set_textarea_height(&element);
-}
-
-fn set_textarea_height(element: &Element) {
-    let body = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .body()
-        .unwrap();
-    body.set_attribute(
-        "style",
-        format!("height: {}px;", body.client_height()).as_str(),
-    )
-    .unwrap();
-    element.set_attribute("style", "height: auto;").unwrap();
-    let scroll_height = element.scroll_height();
-    if scroll_height > element.client_height() {
-        element
-            .set_attribute("style", format!("height: {}px;", scroll_height).as_str())
-            .unwrap();
-    }
-    body.set_attribute("style", "height: auto;").unwrap();
 }
