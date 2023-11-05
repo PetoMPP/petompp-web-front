@@ -128,13 +128,18 @@ pub fn editor() -> Html {
         },
         _ => None,
     };
+    let edit_text = match &resid {
+        Some(ResId::Blob(_)) => "Blog post:",
+        Some(ResId::ResKey(_)) => "Resource:",
+        None => "Nothing selected:",
+    };
 
     html! {
         <PageBase>
             <div class={"prose"}>
                 <h1>{"Editor"}</h1>
                 <p>{"This is the editor page. Here you can edit the content of the page selected."}</p>
-                <h2 class={"not-prose flex gap-2 items-center"}>{"Now editing:"}<ResourceSelect {resid} {lang} {onselectedchanged}/>{reload}</h2>
+                <h2 class={"not-prose flex flex-col lg:flex-row gap-2 items-center"}>{edit_text}<ResourceSelect {resid} {lang} {onselectedchanged}/>{reload}</h2>
                 <p/>
             </div>
             <div class={"flex flex-col gap-6"}>
