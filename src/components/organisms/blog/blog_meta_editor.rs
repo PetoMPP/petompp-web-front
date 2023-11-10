@@ -85,7 +85,7 @@ pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
         <Label label={"Tags"}>
             <div class={"flex h-full gap-2 py-3 items-center input input-bordered shadow-md flex-wrap"}>
                 {tag_nodes}
-                <input class={"flex w-12 grow outline-none"} type={"text"} placeholder={"Add tag.."} {onkeydown} />
+                <input class={"flex w-12 grow outline-none bg-transparent"} type={"text"} placeholder={"Add tag.."} {onkeydown} />
             </div>
         </Label>
     }
