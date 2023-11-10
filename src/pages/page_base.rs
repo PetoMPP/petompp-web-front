@@ -1,16 +1,33 @@
-use crate::components::atoms::markdown::{EditableProps, Editable};
+use crate::components::atoms::markdown::{Editable, EditableProps};
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct PageBaseProps {
     #[prop_or_default]
     pub children: Children,
+    pub animatenone: Option<()>,
 }
 
 #[function_component(PageBase)]
 pub fn page_base(props: &PageBaseProps) -> Html {
+    let mut class = classes!(
+        "relative",
+        "flex",
+        "flex-col",
+        "grow",
+        "mt-20",
+        "w-full",
+        "p-8",
+        "rounded-t-xl",
+        "bg-base-100"
+    );
+    if props.animatenone.is_none() {
+        class.push("animate-fade");
+        class.push("animate-duration-500");
+        class.push("animate-ease-in-out");
+    }
     html! {
-        <div class={"relative animate-fade animate-duration-500 animate-ease-in-out flex flex-col grow mt-20 w-full p-8 rounded-t-xl bg-base-100"}>
+        <div {class}>
             <div class={"lg:w-5/6 w-full mx-auto"}>
                 {props.children.clone()}
             </div>
