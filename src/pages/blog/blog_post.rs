@@ -99,12 +99,12 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
 }
 
 #[derive(Clone, PartialEq, Properties)]
-struct BlogPostMetaProps {
+pub struct BlogPostMetaProps {
     pub meta: BlogMetaData,
 }
 
 #[function_component(BlogPostMeta)]
-fn blog_post_meta(props: &BlogPostMetaProps) -> Html {
+pub fn blog_post_meta(props: &BlogPostMetaProps) -> Html {
     let img = props
         .meta
         .image
