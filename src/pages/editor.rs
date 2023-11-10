@@ -4,6 +4,7 @@ use crate::components::atoms::loading::Loading;
 use crate::components::atoms::resource_select::ResourceSelect;
 use crate::components::organisms::blog::blog_meta_editor::BlogMetaEditor;
 use crate::components::organisms::markdown_editor::MarkdownEditor;
+use crate::components::organisms::markdown_preview::MarkdownPreview;
 use crate::components::state::State;
 use crate::data::resources::id::{ResId, ResourceId};
 use crate::data::session::SessionStore;
@@ -11,6 +12,7 @@ use crate::pages::page_base::PageBase;
 use crate::router::route::Route;
 use crate::utils::style::get_svg_bg_mask_style;
 use petompp_web_models::models::country::Country;
+use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -28,6 +30,7 @@ pub fn editor() -> Html {
     let (_, session_dispatch) = use_store::<SessionStore>();
     let navigator = use_navigator().unwrap();
     let state = use_state_eq(|| State::Ok(None));
+    let is_preview = use_state_eq(|| false);
     use_effect_with_deps(
         |(resid, lang, state)| {
             let Some(resid) = resid.clone() else {
@@ -68,9 +71,14 @@ pub fn editor() -> Html {
         (resid.clone(), lang.clone(), state.clone()),
     );
     let editor = match &*state {
-        State::Ok(Some(((_, _), (s, _)))) => {
-            html! { <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/> }
-        }
+        State::Ok(Some(((id, _), (s, m)))) => match &*is_preview {
+            true => {
+                html! {<MarkdownPreview resid={id.clone()} markdown={s.clone()} meta={m.clone()} />}
+            }
+            false => {
+                html! { <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/> }
+            }
+        },
         State::Ok(None) => html! {
             <div class={"w-full flex rounded-lg bg-base-100"}>
                 <p class={"mx-auto py-4 text-xl font-semibold"}>{"Select something to edit!"}</p>
@@ -133,6 +141,10 @@ pub fn editor() -> Html {
         Some(ResId::ResKey(_)) => "Resource:",
         None => "Nothing selected:",
     };
+    let onchange = Callback::from(move |e: Event| {
+        let element: HtmlInputElement = e.target_unchecked_into();
+        is_preview.set(element.checked());
+    });
 
     html! {
         <PageBase>
@@ -144,6 +156,11 @@ pub fn editor() -> Html {
             </div>
             <div class={"flex flex-col gap-6"}>
                 {meta_editor}
+                <div id={"swap"} class={"flex flex-row gap-2"}>
+                    <p>{"Editor"}</p>
+                    <input type={"checkbox"} class={"toggle bg-opacity-100"} {onchange}/>
+                    <p>{"Preview"}</p>
+                </div>
                 <div class={"border rounded-lg p-2 shadow-lg"}>
                     {editor}
                 </div>

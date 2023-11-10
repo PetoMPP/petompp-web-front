@@ -18,6 +18,33 @@ mod pages;
 mod router;
 mod utils;
 
+#[derive(Debug, Clone, PartialEq, Properties)]
+pub struct AppProps {
+    pub children: Children,
+    pub preview: bool,
+}
+
+#[function_component(AppBase)]
+pub fn app_base(props: &AppProps) -> Html {
+    let header = match props.preview {
+        true => None,
+        false => Some(html! { <Header /> }),
+    };
+    let mut class = classes!("flex", "flex-col", "bg-base-300");
+    if !props.preview {
+        class.push("min-h-screen");
+    }
+    html! {
+        <body {class}>
+            {header}
+            <img src={"/img/coast.jpg"} class={"w-full w-max-full h-max-full absolute top-10 opacity-40 my-4 h-90"} />
+            <div class={"m-auto w-11/12 lg:w-5/6 xl:w-2/3 flex flex-col grow items-center"}>
+                {props.children.clone()}
+            </div>
+        </body>
+    }
+}
+
 #[function_component(App)]
 pub fn app() -> Html {
     let error_state = use_state(|| None);
@@ -39,13 +66,9 @@ pub fn app() -> Html {
 
     html! {
         <BrowserRouter>
-            <body class={"flex flex-col min-h-screen bg-base-300"}>
-                <Header />
-                <img src={"/img/coast.jpg"} class={"w-full w-max-full h-max-full absolute top-10 opacity-40 my-4 h-90"} />
-                <div class={"m-auto w-11/12 lg:w-5/6 xl:w-2/3 flex flex-col grow items-center"}>
-                    <Switch<Route> render={Route::switch}/>
-                </div>
-            </body>
+            <AppBase preview={false}>
+                <Switch<Route> render={Route::switch}/>
+            </AppBase>
             <Modal />
             <ErrorModal />
         </BrowserRouter>
