@@ -7,6 +7,7 @@ use crate::components::organisms::markdown_editor::MarkdownEditor;
 use crate::components::organisms::markdown_preview::MarkdownPreview;
 use crate::components::state::State;
 use crate::data::resources::id::{ResId, ResourceId};
+use crate::data::resources::store::LocalStore;
 use crate::data::session::SessionStore;
 use crate::pages::page_base::PageBase;
 use crate::router::route::Route;
@@ -28,11 +29,12 @@ pub fn editor() -> Html {
         .and_then(|(r, l)| Some((Some(r), Some(l))))
         .unwrap_or_default();
     let (_, session_dispatch) = use_store::<SessionStore>();
+    let (local_store, local_dispatch) = use_store::<LocalStore>();
     let navigator = use_navigator().unwrap();
     let state = use_state_eq(|| State::Ok(None));
     let is_preview = use_state_eq(|| false);
     use_effect_with_deps(
-        |(resid, lang, state)| {
+        move |(resid, lang, state, local_store)| {
             let Some(resid) = resid.clone() else {
                 state.set(State::Ok(None));
                 return;
@@ -42,6 +44,13 @@ pub fn editor() -> Html {
                 return;
             };
             let state = state.clone();
+            if let Some((value, meta)) = local_store.get(&resid, lang.key()) {
+                state.set(State::Ok(Some((
+                    (resid, lang),
+                    (value.clone(), meta.clone()),
+                ))));
+                return;
+            }
             match &*state {
                 State::Ok(Some(((r, l), _))) if r == &resid && l == &lang => return,
                 State::Loading | State::Err(_) => return,
@@ -68,15 +77,34 @@ pub fn editor() -> Html {
                 state.set(State::Ok(Some(((resid, lang), (value, meta)))));
             })
         },
-        (resid.clone(), lang.clone(), state.clone()),
+        (
+            resid.clone(),
+            lang.clone(),
+            state.clone(),
+            local_store.clone(),
+        ),
     );
     let editor = match &*state {
-        State::Ok(Some(((id, _), (s, m)))) => match &*is_preview {
+        State::Ok(Some(((id, l), (s, m)))) => match &*is_preview {
             true => {
                 html! {<MarkdownPreview resid={id.clone()} markdown={s.clone()} meta={m.clone()} />}
             }
             false => {
-                html! { <MarkdownEditor state={s.clone()} onmodifiedchanged={Callback::noop()}/> }
+                let onchanged = {
+                    let local_dispatch = local_dispatch.clone();
+                    let id = id.clone();
+                    let l = l.clone();
+                    Callback::from(move |st: String| {
+                        local_dispatch.reduce_mut(|ls| {
+                            if let Some((s, _)) = ls.get_mut(&id, l.key()) {
+                                *s = st.clone();
+                            } else {
+                                ls.insert(id.clone(), l.key(), st.clone(), None);
+                            }
+                        });
+                    })
+                };
+                html! { <MarkdownEditor state={s.clone()} {onchanged}/> }
             }
         },
         State::Ok(None) => html! {
@@ -112,6 +140,28 @@ pub fn editor() -> Html {
                 </button>
             })
         }
+        _ => None,
+    };
+    let clear_local = match (&resid, &lang) {
+        (Some(resid), Some(lang)) => match local_store.get(&resid, lang.key()) {
+            Some(_) => {
+                let state = state.clone();
+                let local_dispatch = local_dispatch.clone();
+                let id = resid.clone();
+                let l = lang.clone();
+                Some(html! {
+                    <button class={"btn btn-warning"} onclick={Callback::from(move |_| {
+                        local_dispatch.reduce_mut(|ls| {
+                            ls.remove(&id, l.key());
+                        });
+                        state.set(State::Ok(None));
+                    })}>
+                    {"Discard local changes"}
+                    </button>
+                })
+            }
+            _ => None,
+        },
         _ => None,
     };
     let onselectedchanged = {
@@ -151,7 +201,11 @@ pub fn editor() -> Html {
             <div class={"prose"}>
                 <h1>{"Editor"}</h1>
                 <p>{"This is the editor page. Here you can edit the content of the page selected."}</p>
-                <h2 class={"not-prose flex flex-col lg:flex-row gap-2 items-center"}>{edit_text}<ResourceSelect {resid} {lang} {onselectedchanged}/>{reload}</h2>
+                <h2 class={"not-prose flex flex-col lg:flex-row gap-2 items-center"}>{edit_text}
+                    <ResourceSelect {resid} {lang} {onselectedchanged}/>
+                    {reload}
+                    {clear_local}
+                    </h2>
                 <p/>
             </div>
             <div class={"flex flex-col gap-6"}>
