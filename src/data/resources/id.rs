@@ -1,6 +1,7 @@
 use crate::api::client::{ApiClient, BlobClient, RequestError};
 use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct ResourceId {
@@ -53,6 +54,12 @@ impl From<(ResId, Country)> for ResourceId {
 pub enum ResId {
     ResKey(String),
     Blob(String),
+}
+
+impl Display for ResId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{:?}", &self))
+    }
 }
 
 impl ResId {
