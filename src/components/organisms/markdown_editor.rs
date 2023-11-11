@@ -2,7 +2,6 @@ use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
 use crate::utils::js::{set_textarea_height, set_textarea_text};
 use crate::{api::client::RequestError, data::session::SessionStore};
-use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{ClipboardEvent, HtmlInputElement};
@@ -15,52 +14,22 @@ const UPLOAD_FOLDER: &str = "editor";
 #[derive(Clone, PartialEq, Properties)]
 pub struct MarkdownEditorProps {
     pub state: String,
-    pub onmodifiedchanged: Callback<bool>,
+    pub onchanged: Callback<String>,
 }
 
 #[function_component(MarkdownEditor)]
 pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
-    let props = props.clone();
     let error_state = use_state_eq(|| None);
-    let current_val = use_mut_ref(String::new);
-    let last_state = use_mut_ref(|| props.state.clone());
-    let last_mod_state = use_mut_ref(|| false);
-    let markdown = use_state(String::new);
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     use_effect_with_deps(
-        move |(props, current_val, last_state, markdown, last_mod_state)| {
-            let val = match !current_val.borrow().is_empty() && last_state.borrow().eq(&props.state)
-            {
-                true => current_val.borrow().to_string(),
-                false => {
-                    current_val.borrow_mut().clear();
-                    let mut last_mod = last_mod_state.borrow_mut();
-                    if *last_mod {
-                        props.onmodifiedchanged.emit(false);
-                        *last_mod = false;
-                    }
-                    props.state.clone()
-                }
-            };
-            set_textarea_text(val.as_str(), TEXTAREA_ID);
-            markdown.set(val);
-            last_state.replace(props.state.clone());
-            move || {}
+        move |initial_state| {
+            set_textarea_text(initial_state.as_ref(), TEXTAREA_ID);
         },
-        (
-            props.clone(),
-            current_val.clone(),
-            last_state.clone(),
-            markdown.clone(),
-            last_mod_state.clone(),
-        ),
+        props.state.clone(),
     );
 
     let onpaste = {
-        let last_state = last_state.clone();
-        let last_mod_state = last_mod_state.clone();
         let props = props.clone();
-        let current_val = current_val.clone();
         let session_store = session_store.clone();
         let error_state = error_state.clone();
         Callback::from(move |e: Event| {
@@ -80,37 +49,22 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
                 session_store.clone(),
                 file.clone(),
                 error_state.clone(),
-                props.clone(),
-                current_val.clone(),
-                last_state.clone(),
-                last_mod_state.clone(),
+                props.onchanged.clone(),
             );
         })
     };
 
     let oninput = {
-        let last_state = last_state.clone();
-        let last_mod_state = last_mod_state.clone();
-        let props = props.clone();
-        let current_val = current_val.clone();
+        let onchanged = props.onchanged.clone();
         Callback::from(move |e: InputEvent| {
             let element: HtmlInputElement = e.target_unchecked_into();
             let value = element.value();
-            let mut last_mod = last_mod_state.borrow_mut();
-            let changed = last_state.borrow().ne(&value);
-            if changed != *last_mod {
-                props.onmodifiedchanged.emit(changed);
-                *last_mod = changed;
-            }
-            *current_val.borrow_mut() = value;
+            onchanged.emit(value);
             set_textarea_height(&element);
         })
     };
     let ondrop = {
-        let last_state = last_state.clone();
-        let last_mod_state = last_mod_state.clone();
         let props = props.clone();
-        let current_val = current_val.clone();
         let session_store = session_store.clone();
         let error_state = error_state.clone();
         Callback::from(move |e: DragEvent| {
@@ -126,10 +80,7 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
                     session_store.clone(),
                     file,
                     error_state.clone(),
-                    props.clone(),
-                    current_val.clone(),
-                    last_state.clone(),
-                    last_mod_state.clone(),
+                    props.onchanged.clone(),
                 );
             }
         })
@@ -149,10 +100,7 @@ fn send_file(
     session_store: Rc<SessionStore>,
     file: web_sys::File,
     error_state: UseStateHandle<Option<RequestError>>,
-    props: MarkdownEditorProps,
-    current_val: Rc<RefCell<String>>,
-    last_state: Rc<RefCell<String>>,
-    last_mod_state: Rc<RefCell<bool>>,
+    onchanged: Callback<String>,
 ) {
     spawn_local(async move {
         match ApiClient::upload_img(
@@ -166,13 +114,7 @@ fn send_file(
                 let Some(new_value) = insert_img_into_textarea(url.as_str()) else {
                     return;
                 };
-                let mut last_mod = last_mod_state.borrow_mut();
-                let changed = last_state.borrow().ne(&new_value);
-                if changed != *last_mod {
-                    props.onmodifiedchanged.emit(changed);
-                    *last_mod = changed;
-                }
-                *current_val.borrow_mut() = new_value;
+                onchanged.emit(new_value);
             }
             Err(e) => {
                 gloo::console::error!(e.to_string());

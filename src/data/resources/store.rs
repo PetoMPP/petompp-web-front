@@ -1,60 +1,33 @@
 use super::id::ResId;
 use petompp_web_models::models::blog_data::BlogMetaData;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use yewdux::prelude::*;
 
-#[derive(PartialEq, Clone, Debug, Store, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Store, Serialize, Deserialize, Default)]
 #[store(storage = "local")]
 pub struct LocalStore {
-    blog_posts: Vec<(ResId, String, BlogMetaData)>,
-    resources: Vec<(ResId, String)>,
+    data: BTreeMap<String, (String, Option<BlogMetaData>)>,
 }
 
 impl LocalStore {
-    pub fn get_blog_post(&self, resid: &ResId) -> Option<(&String, &BlogMetaData)> {
-        self.blog_posts
-            .iter()
-            .find(|(r, _, _)| r == resid)
-            .map(|(_, s, m)| (s, m))
+    pub fn get(&self, key: &ResId, lang: &str) -> Option<&(String, Option<BlogMetaData>)> {
+        self.data.get(&(key.to_string() + lang))
     }
 
-    pub fn get_blog_post_mut(
+    pub fn get_mut(
         &mut self,
-        resid: &ResId,
-    ) -> Option<(&mut String, &mut BlogMetaData)> {
-        self.blog_posts
-            .iter_mut()
-            .find(|(r, _, _)| r == resid)
-            .map(|(_, s, m)| (s, m))
+        key: &ResId,
+        lang: &str,
+    ) -> Option<&mut (String, Option<BlogMetaData>)> {
+        self.data.get_mut(&(key.to_string() + lang))
     }
 
-    pub fn get_resource(&self, resid: &ResId) -> Option<&String> {
-        self.resources
-            .iter()
-            .find(|(r, _)| r == resid)
-            .map(|(_, s)| s)
+    pub fn insert(&mut self, key: ResId, lang: &str, value: String, meta: Option<BlogMetaData>) {
+        self.data.insert(key.to_string() + lang, (value, meta));
     }
 
-    pub fn get_resource_mut(&mut self, resid: &ResId) -> Option<&mut String> {
-        self.resources
-            .iter_mut()
-            .find(|(r, _)| r == resid)
-            .map(|(_, s)| s)
-    }
-}
-
-impl Default for LocalStore {
-    fn default() -> Self {
-        Self {
-            blog_posts: vec![(
-                ResId::Blob("test".to_string()),
-                "test".to_string(),
-                BlogMetaData {
-                    id: "test".to_string(),
-                    ..Default::default()
-                },
-            )],
-            resources: Default::default(),
-        }
+    pub fn remove(&mut self, key: &ResId, lang: &str) {
+        self.data.remove(&(key.to_string() + lang));
     }
 }
