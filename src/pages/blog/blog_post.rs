@@ -105,12 +105,10 @@ pub struct BlogPostMetaProps {
 
 #[function_component(BlogPostMeta)]
 pub fn blog_post_meta(props: &BlogPostMetaProps) -> Html {
-    let img = props
-        .meta
-        .image
-        .as_ref()
-        .map(|i| BlobClient::get_url(format!("image-upload/{}", i).as_str()))
-        .unwrap_or("/img/placeholder.svg".to_string());
+    let img = match props.meta.image.as_str() {
+        "" => "/img/placeholder.svg".to_string(),
+        img => BlobClient::get_url(format!("image-upload/{}", img).as_str()),
+    };
     html! {
         <div class={"hero mb-4 md:pt-36 pt-16 rounded-lg p-2"} style={format!("background-image: url({}); -webkit-mask-image: -webkit-linear-gradient(top, rgba(0,0,0,0),rgba(0,0,0,0.8));", img)}>
             <div class={"prose text-neutral text-center max-w-md"}>
