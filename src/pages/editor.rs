@@ -12,6 +12,7 @@ use crate::data::session::SessionStore;
 use crate::pages::page_base::PageBase;
 use crate::router::route::Route;
 use crate::utils::style::get_svg_bg_mask_style;
+use petompp_web_models::models::blog_data::BlogMetaData;
 use petompp_web_models::models::country::Country;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
@@ -85,26 +86,27 @@ pub fn editor() -> Html {
         ),
     );
     let editor = match &*state {
-        State::Ok(Some(((id, l), (s, m)))) => match &*is_preview {
+        State::Ok(Some(((resid, lang), (value, meta)))) => match &*is_preview {
             true => {
-                html! {<MarkdownPreview resid={id.clone()} markdown={s.clone()} meta={m.clone()} />}
+                html! {<MarkdownPreview resid={resid.clone()} markdown={value.clone()} meta={meta.clone()} />}
             }
             false => {
                 let onchanged = {
                     let local_dispatch = local_dispatch.clone();
-                    let id = id.clone();
-                    let l = l.clone();
-                    Callback::from(move |st: String| {
-                        local_dispatch.reduce_mut(|ls| {
-                            if let Some((s, _)) = ls.get_mut(&id, l.key()) {
-                                *s = st.clone();
+                    let resid = resid.clone();
+                    let lang = lang.clone();
+                    let meta = meta.clone();
+                    Callback::from(move |data: String| {
+                        local_dispatch.reduce_mut(|store| {
+                            if let Some((value, _)) = store.get_mut(&resid, lang.key()) {
+                                *value = data.clone();
                             } else {
-                                ls.insert(id.clone(), l.key(), st.clone(), None);
+                                store.insert(resid.clone(), lang.key(), data.clone(), meta.clone());
                             }
                         });
                     })
                 };
-                html! { <MarkdownEditor state={s.clone()} {onchanged}/> }
+                html! { <MarkdownEditor state={value.clone()} {onchanged}/> }
             }
         },
         State::Ok(None) => html! {
@@ -147,12 +149,12 @@ pub fn editor() -> Html {
             Some(_) => {
                 let state = state.clone();
                 let local_dispatch = local_dispatch.clone();
-                let id = resid.clone();
-                let l = lang.clone();
+                let resid = resid.clone();
+                let lang = lang.clone();
                 Some(html! {
                     <button class={"btn btn-warning"} onclick={Callback::from(move |_| {
-                        local_dispatch.reduce_mut(|ls| {
-                            ls.remove(&id, l.key());
+                        local_dispatch.reduce_mut(|store| {
+                            store.remove(&resid, lang.key());
                         });
                         state.set(State::Ok(None));
                     })}>
@@ -174,10 +176,30 @@ pub fn editor() -> Html {
     };
     let meta_editor = match &resid {
         Some(ResId::Blob(_)) => match &*state {
-            State::Ok(Some(((_, _), (_, Some(meta))))) => Some(html! {
-                <Collapse label={"Blog Post Metadata"}>
-                    <BlogMetaEditor data={meta.clone()} ondatachanged={Callback::noop()} />
-                </Collapse>
+            State::Ok(Some(((resid, lang), (value, Some(meta))))) => Some({
+                let local_dispatch = local_dispatch.clone();
+                let resid = resid.clone();
+                let lang = lang.clone();
+                let value = value.clone();
+                let ondatachanged = Callback::from(move |data: BlogMetaData| {
+                    local_dispatch.reduce_mut(|store| {
+                        if let Some((_, meta)) = store.get_mut(&resid.clone(), lang.key()) {
+                            *meta = Some(data.clone());
+                        } else {
+                            store.insert(
+                                resid.clone(),
+                                lang.key(),
+                                value.clone(),
+                                Some(data.clone()),
+                            );
+                        }
+                    });
+                });
+                html! {
+                    <Collapse label={"Blog Post Metadata"}>
+                        <BlogMetaEditor data={meta.clone()} {ondatachanged} />
+                    </Collapse>
+                }
             }),
             State::Loading => {
                 Some(html! { <Loading resource={"blog post metadata".to_string()} /> })
