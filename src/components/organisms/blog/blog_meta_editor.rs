@@ -70,9 +70,10 @@ pub struct BlogTagsEditorProps {
 pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
     let tags = use_state_eq(|| props.data.clone().unwrap_or_default().tags());
     let tag_nodes = {
-        let tags = tags.clone();
         let ondatachanged = props.ondatachanged.clone();
-        (*tags).clone().into_iter()
+        let tags = tags.clone();
+        let ts = props.data.clone().unwrap_or_default().tags().clone();
+        ts.iter()
             .map(move |t| {
                 let onclick = {
                     let t = t.clone();
@@ -80,10 +81,9 @@ pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
                     let ondatachanged = ondatachanged.clone();
                     Callback::from(move |_| {
                         let new_tags = tags.iter().filter(|x| x != &&t).cloned().collect::<Vec<Tag>>();
-                        tags.set(new_tags.clone());
                         ondatachanged.emit(new_tags.into());
                 })};
-                html! { <span {onclick} class={"flex btn btn-xs normal-case rounded-full"}>{&*t}<div class={"w-4 h-4 bg-base-content"} style={get_svg_bg_mask_style("/img/ui/x.svg")} /></span> }})
+                html! { <span {onclick} class={"flex btn btn-xs normal-case rounded-full"}>{&**t}<div class={"w-4 h-4 bg-base-content"} style={get_svg_bg_mask_style("/img/ui/x.svg")} /></span> }})
             .collect::<VNode>()
     };
     let onkeydown = {
@@ -100,13 +100,13 @@ pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
                 return;
             }
             element.set_value("");
-            let new_tags = tags
-                .iter()
-                .cloned()
-                .chain(std::iter::once(tag))
-                .collect::<Vec<Tag>>();
-            tags.set(new_tags.clone());
-            ondatachanged.emit(new_tags.into());
+            ondatachanged.emit(
+                tags.iter()
+                    .cloned()
+                    .chain(std::iter::once(tag))
+                    .collect::<Vec<Tag>>()
+                    .into(),
+            );
         })
     };
     html! {
