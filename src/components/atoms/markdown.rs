@@ -120,12 +120,12 @@ pub fn editable(props: &EditableProps) -> Html {
 }
 
 #[derive(Clone, PartialEq, Properties)]
-struct EditButtonProps {
-    resid: ResId,
+pub struct EditButtonProps {
+    pub resid: ResId,
 }
 
 #[function_component(EditButton)]
-fn edit_button(props: &EditButtonProps) -> Html {
+pub fn edit_button(props: &EditButtonProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, _) = use_store::<SessionStore>();
     let navigator = use_navigator().unwrap();

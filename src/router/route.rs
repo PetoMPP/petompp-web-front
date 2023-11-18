@@ -14,6 +14,8 @@ use yew_router::prelude::*;
 #[derive(Clone, Routable, PartialEq, Debug)]
 pub enum Route {
     #[at("/")]
+    Root,
+    #[at("/home")]
     Home,
     #[at("/projects")]
     Projects,
@@ -51,7 +53,7 @@ impl Display for Route {
 impl Route {
     pub fn switch(self) -> Html {
         match self {
-            Route::Home => html! {<Home />},
+            Route::Root | Route::Home => html! {<Home />},
             Route::Projects => html! {<Projects />},
             Route::Blog | Route::BlogRoot => {
                 html! {<Switch<BlogRoute> render={BlogRoute::switch} />}
