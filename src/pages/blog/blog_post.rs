@@ -1,11 +1,15 @@
 use crate::{
     api::client::{ApiClient, BlobClient},
     components::{
-        atoms::{loading::Loading, markdown::Markdown},
+        atoms::{
+            loading::Loading,
+            markdown::{EditButton, Markdown},
+        },
         state::State,
     },
     data::{
         locales::{store::LocalesStore, tk::TK},
+        resources::id::ResId,
         session::SessionStore,
     },
     pages::page_base::PageBase,
@@ -88,6 +92,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
     let onclick = Callback::from(move |_| navigator.push(&Route::BlogRoot));
     html! {
         <PageBase>
+            <EditButton resid={ResId::Blob(props.id.clone())} />
             <a class={"lg:mb-6 mb-4"} href={"javascript:void(0);"} {onclick}>{locales_store.get(TK::BackToBlogPosts)}</a>
             {meta}
             <div class={"divider"}/>

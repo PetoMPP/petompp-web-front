@@ -108,7 +108,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     });
 
     html! {
-        <div class={"flex flex-row gap-2 w-full lg:w-auto"}>
+        <div class={"flex flex-row gap-4 w-full lg:w-auto"}>
             <div class={"dropdown grow lg:min-w-[12rem]"}>
             <label class={"btn flex grow"} tabindex={"0"}>{props.resid.as_ref().map(|r| r.id().to_string()).unwrap_or("Select a resource!".to_string())}</label>
             <ul tabindex={"0"} class={"dropdown-content w-full flex flex-col mt-1 gap-1 z-10"}>

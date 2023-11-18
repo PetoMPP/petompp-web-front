@@ -68,7 +68,7 @@ pub struct BlogTagsEditorProps {
 
 #[function_component(BlogTagsEditor)]
 pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
-    let tags = use_state_eq(|| props.data.clone().unwrap_or_default().tags());
+    let tags = props.data.clone().unwrap_or_default().tags();
     let tag_nodes = {
         let ondatachanged = props.ondatachanged.clone();
         let tags = tags.clone();
