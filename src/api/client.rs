@@ -5,8 +5,11 @@ use crate::{
 use petompp_web_models::{
     error::Error,
     models::{
-        blog_data::BlogMetaData, country::Country, credentials::Credentials,
-        resource_data::ResourceData, user::UserData,
+        blog_data::{BlogData, BlogMetaData},
+        country::Country,
+        credentials::Credentials,
+        resource_data::ResourceData,
+        user::UserData,
     },
 };
 use reqwasm::http::*;
@@ -254,6 +257,22 @@ impl ApiClient {
             Option::<&String>::None,
         )
         .await
+    }
+
+    pub async fn create_or_update_post(
+        id: &str,
+        lang: &str,
+        token: &str,
+        value: &BlogData,
+    ) -> Result<(), RequestError> {
+        Ok(Self::send_json(
+            Method::POST,
+            format!("api/v1/blog/{}/{}", id, lang).as_str(),
+            Some(token),
+            Some(&value),
+        )
+        .await
+        .map(|_: String| ())?)
     }
 
     /// Ok((resources, posts))

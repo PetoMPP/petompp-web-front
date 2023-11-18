@@ -887,6 +887,7 @@ dependencies = [
  "reqwasm",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "serde_yaml",
  "strum",
  "timeago",
@@ -899,8 +900,8 @@ dependencies = [
 
 [[package]]
 name = "petompp-web-models"
-version = "0.3.3"
-source = "git+https://github.com/PetoMPP/petompp-web-models.git?branch=0.3.3#93626cbb059bcd5aacc8f77bf04ede4ef9548d51"
+version = "0.4.4"
+source = "git+https://github.com/PetoMPP/petompp-web-models.git?branch=0.4.4#ddaf81f74ad42b96175608fc606852a2f94938d3"
 dependencies = [
  "chrono",
  "deref-derive",

@@ -1,8 +1,9 @@
-use crate::api::client::ApiClient;
+use crate::api::client::{ApiClient, RequestError};
 use crate::components::atoms::collapse::Collapse;
 use crate::components::atoms::loading::Loading;
 use crate::components::atoms::resource_select::ResourceSelect;
 use crate::components::organisms::blog::blog_meta_editor::BlogMetaEditor;
+use crate::components::organisms::editor::atoms::save_button::SaveButton;
 use crate::components::organisms::markdown_editor::MarkdownEditor;
 use crate::components::organisms::markdown_preview::MarkdownPreview;
 use crate::components::state::State;
@@ -20,6 +21,9 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
+pub type EditorState =
+    State<Option<((ResId, Country), (String, Option<BlogMetaData>))>, RequestError>;
+
 #[function_component(Editor)]
 pub fn editor() -> Html {
     let location = use_location().unwrap();
@@ -32,7 +36,7 @@ pub fn editor() -> Html {
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (local_store, local_dispatch) = use_store::<LocalStore>();
     let navigator = use_navigator().unwrap();
-    let state = use_state_eq(|| State::Ok(None));
+    let state = use_state(|| EditorState::Ok(None));
     let is_preview = use_state_eq(|| false);
     use_effect_with_deps(
         move |(resid, lang, state, local_store)| {
@@ -45,15 +49,15 @@ pub fn editor() -> Html {
                 return;
             };
             let state = state.clone();
-            if let Some((value, meta)) = local_store.get(&resid, lang.key()) {
-                state.set(State::Ok(Some((
-                    (resid, lang),
-                    (value.clone(), meta.clone()),
-                ))));
-                return;
-            }
             match &*state {
-                State::Ok(Some(((r, l), _))) if r == &resid && l == &lang => return,
+                State::Ok(Some(((r, l), value))) if r == &resid && l == &lang => {
+                    if let Some(local_value) = local_store.get(&resid, lang.key()) {
+                        if value != local_value {
+                            state.set(State::Ok(Some(((resid, lang), local_value.clone()))));
+                        }
+                    }
+                    return;
+                }
                 State::Loading | State::Err(_) => return,
                 _ => state.set(State::Loading),
             };
@@ -152,13 +156,13 @@ pub fn editor() -> Html {
                 let resid = resid.clone();
                 let lang = lang.clone();
                 Some(html! {
-                    <button class={"btn btn-warning"} onclick={Callback::from(move |_| {
+                    <button class={"btn btn-warning grow"} onclick={Callback::from(move |_| {
                         local_dispatch.reduce_mut(|store| {
                             store.remove(&resid, lang.key());
                         });
                         state.set(State::Ok(None));
                     })}>
-                    {"Discard local changes"}
+                    {"Discard"}
                     </button>
                 })
             }
@@ -173,6 +177,10 @@ pub fn editor() -> Html {
                 .push_with_query(&Route::Editor, &resource_id)
                 .unwrap()
         })
+    };
+    let onstatechanged = {
+        let state = state.clone();
+        Callback::from(move |new_state: EditorState| state.set(new_state))
     };
     let meta_editor = match &resid {
         Some(ResId::Blob(_)) => match &*state {
@@ -223,16 +231,20 @@ pub fn editor() -> Html {
             <div class={"prose"}>
                 <h1>{"Editor"}</h1>
                 <p>{"This is the editor page. Here you can edit the content of the page selected."}</p>
-                <h2 class={"not-prose flex flex-col lg:flex-row gap-2 items-center"}>{edit_text}
-                    <ResourceSelect {resid} {lang} {onselectedchanged}/>
-                    {reload}
-                    {clear_local}
-                    </h2>
                 <p/>
+                </div>
+            <div class={"flex flex-col lg:flex-row gap-4 pb-6 items-center"}>
+                <h2 class={"flex font-semibold text-2xl"}>{edit_text}</h2>
+                <ResourceSelect resid={resid.clone()} lang={lang.clone()} {onselectedchanged}/>
+                {reload}
+                <div class={"flex flex-row gap-4 lg:w-auto w-full"}>
+                    {clear_local}
+                    <SaveButton state={(*state).clone()} {onstatechanged} {resid} {lang}/>
+                </div>
             </div>
             <div class={"flex flex-col gap-6"}>
                 {meta_editor}
-                <div id={"swap"} class={"flex flex-row gap-2"}>
+                <div id={"swap"} class={"flex flex-row gap-4"}>
                     <p>{"Editor"}</p>
                     <input type={"checkbox"} class={"toggle bg-opacity-100"} {onchange}/>
                     <p>{"Preview"}</p>
