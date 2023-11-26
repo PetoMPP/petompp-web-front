@@ -6,6 +6,7 @@ use crate::{
     },
     router::admin::AdminRoute,
 };
+use serde::Serialize;
 use std::fmt::Display;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
@@ -96,6 +97,54 @@ impl Route {
                     Some(Self::get_onclick(route, navigator))
                 }
                 _ => Some(Self::get_onclick(route, navigator)),
+            },
+            None => None,
+        }
+    }
+
+    pub fn navigate_from_str(
+        path: &str,
+        query: Option<&impl Serialize>,
+        navigator: Navigator,
+    ) -> Option<()> {
+        match Self::recognize(path) {
+            Some(route) => match route {
+                Route::Admin | Route::AdminRoot => {
+                    let route = AdminRoute::recognize(path)?;
+                    match query {
+                        Some(query) => match navigator.push_with_query(&route, query) {
+                            Ok(_) => Some(()),
+                            Err(_) => None,
+                        },
+                        None => {
+                            navigator.push(&route);
+                            Some(())
+                        }
+                    }
+                }
+                Route::Blog | Route::BlogRoot => {
+                    let route = BlogRoute::recognize(path)?;
+                    match query {
+                        Some(query) => match navigator.push_with_query(&route, query) {
+                            Ok(_) => Some(()),
+                            Err(_) => None,
+                        },
+                        None => {
+                            navigator.push(&route);
+                            Some(())
+                        }
+                    }
+                }
+                _ => match query {
+                    Some(query) => match navigator.push_with_query(&route, query) {
+                        Ok(_) => Some(()),
+                        Err(_) => None,
+                    },
+                    None => {
+                        navigator.push(&route);
+                        Some(())
+                    }
+                },
             },
             None => None,
         }
