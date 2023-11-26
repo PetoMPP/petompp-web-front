@@ -1,16 +1,20 @@
 use self::macros::onchange;
 use crate::{
-    components::atoms::{
-        label::Label,
-        text_input::{InputType, TextInput, TextareaInput},
+    components::{
+        atoms::{
+            label::Label,
+            text_input::{InputType, TextInput, TextareaInput},
+        },
+        organisms::blog::blog_image_select::BlogImageSelect,
     },
-    utils::style::get_svg_bg_mask_style,
+    utils::{ext::Mergable, style::get_svg_bg_mask_style},
 };
 use petompp_web_models::models::{
     blog_data::BlogMetaData,
     tag::{Tag, Tags},
 };
-use web_sys::HtmlInputElement;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlElement, HtmlInputElement};
 use yew::{prelude::*, virtual_dom::VNode};
 
 #[derive(Clone, Properties, PartialEq)]
@@ -45,12 +49,7 @@ pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
                 itype={InputType::Text}
                 enabled={false}
                 value={props.data.as_ref().map(|d| d.updated.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
-            <TextInput
-                label={"Image"}
-                itype={InputType::Text}
-                enabled={true}
-                value={props.data.as_ref().map(|d| d.image.clone()).unwrap_or_default()}
-                onchange={image_onchange}/>
+            <ImageLinkEditor data={props.data.as_ref().map(|d| d.image.clone())} ondatachanged={image_onchange}/>
             <TextareaInput
                 label={"Summary"}
                 enabled={true}
@@ -115,6 +114,36 @@ pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
                 {tag_nodes}
                 <input class={"flex w-12 grow outline-none bg-transparent"} type={"text"} placeholder={"Add tag.."} {onkeydown} />
             </div>
+        </Label>
+    }
+}
+
+#[derive(Clone, Properties, PartialEq)]
+pub struct ImageLinkEditorProps {
+    pub data: Option<String>,
+    pub ondatachanged: Callback<String>,
+}
+
+#[function_component(ImageLinkEditor)]
+pub fn image_link_editor(props: &ImageLinkEditorProps) -> Html {
+    let focus_out = Callback::from(|_| {
+        let element = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .get_element_by_id("modal")
+            .unwrap()
+            .unchecked_into::<HtmlElement>();
+        element.focus().unwrap();
+    });
+    let ondatachanged = {
+        let ondatachanged = props.ondatachanged.clone();
+        Callback::from(move |d: Option<_>| d.map(|d| ondatachanged.emit(d)).unwrap_or_default())
+            .merge(focus_out)
+    };
+    html! {
+        <Label label={"Image"} >
+            <BlogImageSelect data={props.data.clone()} {ondatachanged} />
         </Label>
     }
 }
