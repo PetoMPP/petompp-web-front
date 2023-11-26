@@ -1,6 +1,6 @@
 use crate::{
     data::{resources::id::ResId, session::SessionStore},
-    router::route::Route,
+    pages::login::LoginRedirect,
 };
 use petompp_web_models::{
     error::Error,
@@ -17,7 +17,6 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, fmt::Display};
 use yew::{html, virtual_dom::VNode};
-use yew_router::prelude::Redirect;
 use yewdux::prelude::Dispatch;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -46,7 +45,7 @@ impl RequestError {
                 }
                 .into()
             });
-            return Err(html! { <Redirect<Route> to={Route::Login} />});
+            return Err(html! {<LoginRedirect />});
         }
         Ok(())
     }
@@ -218,25 +217,45 @@ impl ApiClient {
         .map(|_: ResourceData| ())
     }
 
+    pub async fn get_img_paths() -> Result<Vec<String>, RequestError> {
+        Self::send_json(Method::GET, "api/v1/img/", None, Option::<&String>::None).await
+    }
+
     pub async fn upload_img(
         token: &str,
         img: web_sys::File,
         folder: &str,
+        name: Option<&str>,
     ) -> Result<String, RequestError> {
-        let resp =
-            Request::new(Self::get_url(format!("api/v1/img/?folder={}", folder).as_str()).as_str())
-                .method(Method::PUT)
-                .header("Authorization", format!("Bearer {}", token).as_str())
-                .body(img)
-                .send()
-                .await
-                .map_err(|e| RequestError::Network(e.to_string()))?;
+        let query = match name {
+            Some(name) => format!("?folder={}&filename={}", folder, name),
+            None => format!("?folder={}", folder),
+        };
+        let url = Self::get_url(format!("api/v1/img/{}", query).as_str());
+        let resp = Request::new(url.as_str())
+            .method(Method::PUT)
+            .header("Authorization", format!("Bearer {}", token).as_str())
+            .body(img)
+            .send()
+            .await
+            .map_err(|e| RequestError::Network(e.to_string()))?;
         match Response::<String>::from_response(resp).await? {
             Response::Success(filename) => Ok(BlobClient::get_url(
                 format!("image-upload/{}/{}", folder, filename).as_str(),
             )),
             Response::Error(s, e) => Err(RequestError::Endpoint(s, e)),
         }
+    }
+
+    pub async fn delete_img(token: &str, pattern: &str) -> Result<(), RequestError> {
+        Self::send_json(
+            Method::DELETE,
+            format!("api/v1/img/?pattern={}", pattern).as_str(),
+            Some(token),
+            Option::<&String>::None,
+        )
+        .await
+        .map(|_: usize| ())
     }
 
     pub async fn get_posts_meta() -> Result<Vec<BlogMetaData>, RequestError> {

@@ -107,6 +107,7 @@ fn send_file(
             session_store.token.as_deref().unwrap_or_default(),
             file,
             UPLOAD_FOLDER,
+            None,
         )
         .await
         {
