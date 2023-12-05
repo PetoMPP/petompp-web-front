@@ -370,7 +370,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
                 <div class={"flex lg:flex-row flex-col gap-2 p-2 w-full lg:items-center"}>
                     <div class={"flex border rounded-md px-2 italic bg-base-100 grow"}>
                         {&*curr}
-                        <input id={DIR_INPUT_ID} placeholder={"enter dirname"} class={dir_input_class} onkeydown={add_dir_onkeydown}/>
+                        <input id={DIR_INPUT_ID} enterkeyhint={"done"} placeholder={"enter dirname"} class={dir_input_class} onkeydown={add_dir_onkeydown}/>
                     </div>
                     <div class={"flex flex-row gap-2 justify-between"}>
                         {buttons}
