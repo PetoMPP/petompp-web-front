@@ -42,6 +42,10 @@ pub fn save_button(props: &Props) -> Html {
     let value = value.clone();
     let meta = meta.clone();
     let token = session_store.token.clone().unwrap_or_default();
+    let isnew = match &props.state {
+        EditorState::Ok(Some((Some(true), _, _))) => true,
+        _ => false,
+    };
     let onclick = Callback::from(move |_| {
         let onstatechange = onstatechange.clone();
         let local_dispatch = local_dispatch.clone();
@@ -53,8 +57,8 @@ pub fn save_button(props: &Props) -> Html {
         spawn_local(async move {
             onstatechange.emit(EditorState::Loading);
             match &resid {
-                ResId::ResKey(key) => {
-                    match ApiClient::update_resource(&token, key, &lang, &value).await {
+                ResId::ResKey(key) => match isnew {
+                    true => match ApiClient::create_resource(&token, key, &lang, &value).await {
                         Ok(_) => {
                             local_dispatch.reduce_mut(|store| store.remove(&resid, lang.key()));
                             onstatechange.emit(EditorState::Ok(None));
@@ -62,8 +66,17 @@ pub fn save_button(props: &Props) -> Html {
                         Err(e) => {
                             onstatechange.emit(EditorState::Err(e));
                         }
-                    }
-                }
+                    },
+                    false => match ApiClient::update_resource(&token, key, &lang, &value).await {
+                        Ok(_) => {
+                            local_dispatch.reduce_mut(|store| store.remove(&resid, lang.key()));
+                            onstatechange.emit(EditorState::Ok(None));
+                        }
+                        Err(e) => {
+                            onstatechange.emit(EditorState::Err(e));
+                        }
+                    },
+                },
                 ResId::Blob(_) => {
                     match ApiClient::create_or_update_post(
                         resid.id(),
