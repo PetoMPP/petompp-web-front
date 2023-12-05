@@ -37,18 +37,18 @@ pub fn markdown_preview(props: &MarkdownPreviewProps) -> Html {
         _ => None,
     };
     html! {
-        <div class={"mockup-browser border border-2 border-base-300"}>
+        <div class={"mockup-browser border border-2 border-base-300 shadow-2xl"}>
             <div class={"mockup-browser-toolbar"}>
-            <div class={"input border border-base-300 grow cursor-pointer"}><HrefLink href={url}/></div>
+                <div class={"input border border-base-300 grow cursor-pointer"}><HrefLink href={url}/></div>
+            </div>
+            <div class={"border-t border-base-300"}>
+                <AppBase preview={true}>
+                <PageBase animatenone={Some(())}>
+                    {meta}
+                    <Markdown markdown={props.markdown.clone()} allowhtml={true}/>
+                </PageBase>
+                </AppBase>
+            </div>
         </div>
-        <div class={"border-t border-base-300"}>
-            <AppBase preview={true}>
-            <PageBase animatenone={Some(())}>
-                {meta}
-                <Markdown markdown={props.markdown.clone()} allowhtml={true}/>
-            </PageBase>
-            </AppBase>
-        </div>
-      </div>
     }
 }
