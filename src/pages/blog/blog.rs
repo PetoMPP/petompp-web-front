@@ -33,7 +33,7 @@ pub fn blog() -> Html {
                 _ => data.set(State::Loading),
             }
             spawn_local(async move {
-                match ApiClient::get_posts_meta().await {
+                match ApiClient::get_posts_meta(None).await {
                     Ok(posts) => data.set(State::Ok(Some(posts))),
                     Err(e) => data.set(State::Err(e)),
                 };

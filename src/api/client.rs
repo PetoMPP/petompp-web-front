@@ -88,7 +88,6 @@ impl<T: DeserializeOwned> Response<T> {
     }
 }
 
-pub struct ApiClient;
 lazy_static::lazy_static! {
     static ref API_URL: String = match std::option_env!("API_URL").unwrap_or_default() {
         url if url.ends_with('/') => url.to_string(),
@@ -105,6 +104,8 @@ pub struct LoginResponse {
     pub token: String,
     pub user: UserData,
 }
+
+pub struct ApiClient;
 
 impl ApiClient {
     fn get_url(path: &str) -> String {
@@ -180,7 +181,27 @@ impl ApiClient {
         .map(|_| ())
     }
 
-    pub async fn get_resource(key: &str, lang: &Country) -> Result<String, RequestError> {
+    pub async fn create_resource(
+        token: &str,
+        key: &str,
+        lang: &Country,
+        value: &str,
+    ) -> Result<(), RequestError> {
+        let resource = ResourceData::new_from_lang(key, lang, value);
+        Self::send_json(
+            Method::PUT,
+            format!("api/v1/res/{}", key).as_str(),
+            Some(token),
+            Some(&resource),
+        )
+        .await
+        .map(|_: ResourceData| ())
+    }
+
+    pub async fn get_resource(
+        key: &str,
+        lang: &Country,
+    ) -> Result<(Country, String), RequestError> {
         Self::send_json(
             Method::GET,
             format!("api/v1/res/{}?lang={}", key, lang.key()).as_str(),
@@ -215,6 +236,32 @@ impl ApiClient {
         )
         .await
         .map(|_: ResourceData| ())
+    }
+
+    pub async fn delete_resource(token: &str, key: &str) -> Result<(), RequestError> {
+        Self::send_json(
+            Method::DELETE,
+            format!("api/v1/res/{}", key).as_str(),
+            Some(token),
+            Option::<&String>::None,
+        )
+        .await
+        .map(|_: String| ())
+    }
+
+    pub async fn delete_resource_lang(
+        token: &str,
+        key: &str,
+        lang: &Country,
+    ) -> Result<(), RequestError> {
+        Self::send_json(
+            Method::DELETE,
+            format!("api/v1/res/{}?lang={}", key, lang.key()).as_str(),
+            Some(token),
+            Option::<&String>::None,
+        )
+        .await
+        .map(|_: String| ())
     }
 
     pub async fn get_img_paths() -> Result<Vec<String>, RequestError> {
@@ -258,14 +305,12 @@ impl ApiClient {
         .map(|_: usize| ())
     }
 
-    pub async fn get_posts_meta() -> Result<Vec<BlogMetaData>, RequestError> {
-        Self::send_json(
-            Method::GET,
-            "api/v1/blog/meta/",
-            None,
-            Option::<&String>::None,
-        )
-        .await
+    pub async fn get_posts_meta(prefix: Option<String>) -> Result<Vec<BlogMetaData>, RequestError> {
+        let path = match prefix {
+            Some(prefix) => format!("api/v1/blog/meta/?prefix={}", prefix),
+            None => "api/v1/blog/meta/".to_string(),
+        };
+        Self::send_json(Method::GET, path.as_str(), None, Option::<&String>::None).await
     }
 
     pub async fn get_post_meta(id: &str, lang: &str) -> Result<BlogMetaData, RequestError> {
@@ -294,6 +339,17 @@ impl ApiClient {
         .map(|_: String| ())?)
     }
 
+    pub async fn delete_post(id: &str, lang: &str, token: &str) -> Result<(), RequestError> {
+        Ok(Self::send_json(
+            Method::DELETE,
+            format!("api/v1/blog/{}/{}", id, lang).as_str(),
+            Some(token),
+            Option::<&String>::None,
+        )
+        .await
+        .map(|_: String| ())?)
+    }
+
     /// Ok((resources, posts))
     pub async fn get_res_ids(token: &str) -> Result<(Vec<ResId>, Vec<ResId>), RequestError> {
         Ok((
@@ -303,11 +359,12 @@ impl ApiClient {
                 .map(|k| ResId::ResKey(k))
                 .collect::<Vec<_>>(),
             {
-                let mut posts = ApiClient::get_posts_meta()
+                let mut posts = ApiClient::get_posts_meta(None)
                     .await?
                     .into_iter()
                     .map(|r| ResId::Blob(r.id))
                     .collect::<Vec<_>>();
+                posts.sort();
                 posts.dedup();
                 posts
             },
@@ -348,6 +405,7 @@ impl BlobClient {
     pub async fn get_post_content(filename: &str) -> Result<String, RequestError> {
         let response = &Request::new(Self::get_post_url(filename).as_str())
             .method(Method::GET)
+            .cache(RequestCache::NoCache)
             .send()
             .await
             .map_err(|e| RequestError::Network(e.to_string()))?;

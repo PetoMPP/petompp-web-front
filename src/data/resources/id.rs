@@ -1,7 +1,7 @@
 use crate::api::client::{ApiClient, BlobClient, RequestError};
 use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct ResourceId {
@@ -58,7 +58,23 @@ pub enum ResId {
 
 impl Display for ResId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:?}", &self))
+        f.write_str(&match &self {
+            ResId::ResKey(id) => format!("reskey:{}", id),
+            ResId::Blob(id) => format!("blob:{}", id),
+        })
+    }
+}
+
+impl FromStr for ResId {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (kind, id) = s.split_once(":").ok_or("invalid id")?;
+        match kind {
+            "reskey" => Ok(Self::ResKey(id.to_string())),
+            "blob" => Ok(Self::Blob(id.to_string())),
+            _ => Err("invalid id"),
+        }
     }
 }
 
@@ -71,7 +87,9 @@ impl ResId {
 
     pub async fn get_value(&self, lang: &Country) -> Result<String, RequestError> {
         match self {
-            Self::ResKey(reskey) => ApiClient::get_resource(reskey.as_str(), lang).await,
+            Self::ResKey(reskey) => ApiClient::get_resource(reskey.as_str(), lang)
+                .await
+                .map(|(_, v)| v),
             Self::Blob(path) => {
                 BlobClient::get_post_content(format!("{}/{}.md", path, lang.key()).as_str()).await
             }
