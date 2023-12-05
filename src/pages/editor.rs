@@ -1,18 +1,26 @@
-use crate::api::client::{ApiClient, RequestError};
-use crate::components::atoms::collapse::Collapse;
-use crate::components::atoms::loading::Loading;
-use crate::components::atoms::resource_select::ResourceSelect;
-use crate::components::organisms::blog::blog_meta_editor::BlogMetaEditor;
-use crate::components::organisms::editor::atoms::save_button::SaveButton;
-use crate::components::organisms::markdown_editor::MarkdownEditor;
-use crate::components::organisms::markdown_preview::MarkdownPreview;
-use crate::components::state::State;
-use crate::data::resources::id::{ResId, ResourceId};
-use crate::data::resources::store::LocalStore;
-use crate::data::session::SessionStore;
-use crate::pages::page_base::PageBase;
-use crate::router::route::Route;
-use crate::utils::style::get_svg_bg_mask_style;
+use crate::{
+    api::client::{ApiClient, RequestError},
+    components::{
+        atoms::{collapse::Collapse, loading::Loading, resource_select::ResourceSelect},
+        organisms::{
+            blog::blog_meta_editor::BlogMetaEditor,
+            editor::atoms::{delete_button::DeleteButton, save_button::SaveButton},
+            markdown_editor::MarkdownEditor,
+            markdown_preview::MarkdownPreview,
+        },
+        state::State,
+    },
+    data::{
+        resources::{
+            id::{ResId, ResourceId},
+            store::LocalStore,
+        },
+        session::SessionStore,
+    },
+    pages::page_base::PageBase,
+    router::route::Route,
+    utils::style::get_svg_bg_mask_style,
+};
 use petompp_web_models::models::blog_data::BlogMetaData;
 use petompp_web_models::models::country::Country;
 use web_sys::HtmlInputElement;
@@ -21,8 +29,14 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-pub type EditorState =
-    State<Option<((ResId, Country), (String, Option<BlogMetaData>))>, RequestError>;
+pub type EditorState = State<
+    Option<(
+        Option<bool>,
+        (ResId, Country),
+        (String, Option<BlogMetaData>),
+    )>,
+    RequestError,
+>;
 
 #[function_component(Editor)]
 pub fn editor() -> Html {
@@ -36,7 +50,7 @@ pub fn editor() -> Html {
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (local_store, local_dispatch) = use_store::<LocalStore>();
     let navigator = use_navigator().unwrap();
-    let state = use_state(|| EditorState::Ok(None));
+    let state = use_state_eq(|| EditorState::Ok(None));
     let is_preview = use_state_eq(|| false);
     use_effect_with_deps(
         move |(resid, lang, state, local_store)| {
@@ -49,37 +63,103 @@ pub fn editor() -> Html {
                 return;
             };
             let state = state.clone();
+            let local_store = local_store.clone();
+            let cached_state = local_store.get(&resid, lang.key()).cloned();
+            let any_cached_state = cached_state.is_some() || local_store.exists(&resid);
             match &*state {
-                State::Ok(Some(((r, l), value))) if r == &resid && l == &lang => {
-                    if let Some(local_value) = local_store.get(&resid, lang.key()) {
-                        if value != local_value {
-                            state.set(State::Ok(Some(((resid, lang), local_value.clone()))));
+                State::Ok(Some((n, (r, l), value))) if r == &resid && l == &lang => {
+                    if let Some(local_value) = &cached_state {
+                        if value == local_value {
+                            return;
                         }
+                        // we already know that the resource exists or not, no need to call api
+                        if n.is_some() {
+                            state.set(State::Ok(Some((*n, (resid, lang), local_value.clone()))));
+                            return;
+                        }
+                    } else {
+                        return;
                     }
-                    return;
                 }
                 State::Loading | State::Err(_) => return,
                 _ => state.set(State::Loading),
             };
             spawn_local(async move {
-                let value = match resid.get_value(&lang).await {
-                    Ok(state) => state,
-                    Err(e) => {
-                        state.set(State::Err(e));
-                        return;
-                    }
-                };
-                let meta = match &resid {
+                // does current resource exist?
+                let (is_new, new_state) = match &resid {
                     ResId::Blob(p) => match ApiClient::get_post_meta(&p, lang.key()).await {
-                        Ok(meta) => Some(meta),
-                        Err(e) => {
-                            state.set(State::Err(e));
-                            return;
-                        }
+                        Ok(m) => match resid.get_value(&lang).await {
+                            Ok(v) => (false, Some((v, Some(m)))),
+                            Err(e) => {
+                                state.set(State::Err(e));
+                                return;
+                            }
+                        },
+                        Err(e) => match e {
+                            RequestError::Endpoint(404, _) => {
+                                // does it exist in another language?
+                                match ApiClient::get_posts_meta(Some(p.to_string())).await {
+                                    Ok(_) => (true, None),
+                                    Err(e) => match e {
+                                        RequestError::Endpoint(404, _) => {
+                                            // does it exist locally?
+                                            match cached_state.is_some() || any_cached_state {
+                                                true => (true, None),
+                                                false => {
+                                                    state.set(State::Err(e));
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                        _ => {
+                                            state.set(State::Err(e));
+                                            return;
+                                        }
+                                    },
+                                }
+                            }
+                            _ => {
+                                state.set(State::Err(e));
+                                return;
+                            }
+                        },
                     },
-                    _ => None,
+                    ResId::ResKey(k) => match ApiClient::get_resource(k.as_str(), &lang).await {
+                        Ok((c, v)) => match c == lang {
+                            true => (false, Some((v, None))),
+                            false => (false, None),
+                        },
+                        Err(e) => match cached_state.is_some() || any_cached_state {
+                            true => (true, None),
+                            false => {
+                                state.set(State::Err(e));
+                                return;
+                            }
+                        },
+                    },
                 };
-                state.set(State::Ok(Some(((resid, lang), (value, meta)))));
+                match (new_state, cached_state) {
+                    (Some(_), Some(cs)) => {
+                        state.set(State::Ok(Some((Some(is_new), (resid, lang), cs.clone()))));
+                    }
+                    (Some(ns), None) => {
+                        state.set(State::Ok(Some((Some(is_new), (resid, lang), ns))));
+                    }
+                    (None, Some(cs)) => {
+                        state.set(State::Ok(Some((Some(is_new), (resid, lang), cs.clone()))));
+                    }
+                    (None, None) => {
+                        let meta = match &resid {
+                            ResId::Blob(_) => Some(BlogMetaData::default()),
+                            _ => None,
+                        };
+                        state.set(State::Ok(Some((
+                            Some(is_new),
+                            (resid, lang),
+                            ("".to_string(), meta),
+                        ))));
+                    }
+                }
             })
         },
         (
@@ -89,8 +169,13 @@ pub fn editor() -> Html {
             local_store.clone(),
         ),
     );
+    if let State::Err(e) = &*state {
+        if let Err(redirect) = e.handle_failed_auth(session_dispatch.clone()) {
+            return redirect;
+        }
+    }
     let editor = match &*state {
-        State::Ok(Some(((resid, lang), (value, meta)))) => match &*is_preview {
+        State::Ok(Some((_, (resid, lang), (value, meta)))) => match &*is_preview {
             true => {
                 html! {<MarkdownPreview resid={resid.clone()} markdown={value.clone()} meta={meta.clone()} />}
             }
@@ -110,7 +195,11 @@ pub fn editor() -> Html {
                         });
                     })
                 };
-                html! { <MarkdownEditor state={value.clone()} {onchanged}/> }
+                html! {
+                <div class={"border border-2 border-base-300 rounded-2xl p-2 shadow-2xl"}>
+                    <MarkdownEditor state={value.clone()} {onchanged}/>
+                </div>
+                }
             }
         },
         State::Ok(None) => html! {
@@ -148,10 +237,21 @@ pub fn editor() -> Html {
         }
         _ => None,
     };
+    let go_back = match &*state {
+        State::Ok(None) => None,
+        _ => {
+            let navigator = navigator.clone();
+            Some(html! {
+                <button class={"btn btn-square"} onclick={Callback::from(move |_| navigator.push(&Route::Editor))}>
+                    <div class={"bg-base-content h-10 w-10"} style={get_svg_bg_mask_style("/img/ui/back.svg")}/>
+                </button>
+            })
+        }
+    };
     let clear_local = match (&resid, &lang) {
         (Some(resid), Some(lang)) => match local_store.get(&resid, lang.key()) {
             Some(_) => {
-                let state = state.clone();
+                let navigator = navigator.clone();
                 let local_dispatch = local_dispatch.clone();
                 let resid = resid.clone();
                 let lang = lang.clone();
@@ -160,7 +260,7 @@ pub fn editor() -> Html {
                         local_dispatch.reduce_mut(|store| {
                             store.remove(&resid, lang.key());
                         });
-                        state.set(State::Ok(None));
+                        navigator.push(&Route::Editor);
                     })}>
                     {"Discard"}
                     </button>
@@ -184,7 +284,7 @@ pub fn editor() -> Html {
     };
     let meta_editor = match &resid {
         Some(ResId::Blob(_)) => match &*state {
-            State::Ok(Some(((resid, lang), (value, Some(meta))))) => Some({
+            State::Ok(Some((_, (resid, lang), (value, Some(meta))))) => Some({
                 let local_dispatch = local_dispatch.clone();
                 let resid = resid.clone();
                 let lang = lang.clone();
@@ -216,15 +316,49 @@ pub fn editor() -> Html {
         },
         _ => None,
     };
-    let edit_text = match &resid {
-        Some(ResId::Blob(_)) => "Blog post:",
-        Some(ResId::ResKey(_)) => "Resource:",
-        None => "Nothing selected:",
+    let is_new = match &*state {
+        State::Ok(Some((n, _, _))) => n.clone(),
+        _ => None,
+    };
+    let edit_text = {
+        let edit_pref = match is_new {
+            Some(true) => "Creating:",
+            _ => "Editing:",
+        };
+        let edit_text = match &resid {
+            Some(ResId::Blob(_)) => "Blog post:",
+            Some(ResId::ResKey(_)) => "Resource:",
+            None => "Nothing selected:",
+        };
+        format!("{} {}", edit_pref, edit_text)
     };
     let onchange = Callback::from(move |e: Event| {
         let element: HtmlInputElement = e.target_unchecked_into();
         is_preview.set(element.checked());
+        spawn_local(async move {
+            let Some((window, body, ele)) = web_sys::window().and_then(|w| {
+                w.document().and_then(|d| {
+                    d.body()
+                        .and_then(|b| d.document_element().map(|e| (b, e)).map(|(b, e)| (w, b, e)))
+                })
+            }) else {
+                gloo::console::error!("failed to scroll to bottom");
+                return;
+            };
+            ele.set_attribute("style", "scroll-behavior: smooth;")
+                .unwrap();
+            async_std::task::sleep(std::time::Duration::from_millis(100)).await;
+            window.scroll_to_with_x_and_y(0f64, body.scroll_height() as f64);
+            ele.set_attribute("style", "scroll-behavior: auto;")
+                .unwrap();
+        })
     });
+    let delete_button = match (is_new, &resid, &lang) {
+        (Some(false), Some(resid), Some(lang)) => Some(html! {
+            <DeleteButton resid={resid.clone()} lang={lang.clone()}/>
+        }),
+        _ => None,
+    };
 
     html! {
         <PageBase>
@@ -235,11 +369,13 @@ pub fn editor() -> Html {
                 </div>
             <div class={"flex flex-col lg:flex-row gap-4 pb-6 items-center"}>
                 <h2 class={"flex font-semibold text-2xl"}>{edit_text}</h2>
-                <ResourceSelect resid={resid.clone()} lang={lang.clone()} {onselectedchanged}/>
+                <ResourceSelect resid={resid.clone()} lang={lang.clone()} {onselectedchanged} state={Some((*state).clone())}/>
+                {go_back}
                 {reload}
                 <div class={"flex flex-row gap-4 lg:w-auto w-full"}>
                     {clear_local}
-                    <SaveButton state={(*state).clone()} {onstatechanged} {resid} {lang}/>
+                    <SaveButton state={(*state).clone()} {onstatechanged} resid={resid.clone()} lang={lang.clone()}/>
+                    {delete_button}
                 </div>
             </div>
             <div class={"flex flex-col gap-6"}>
@@ -249,9 +385,7 @@ pub fn editor() -> Html {
                     <input type={"checkbox"} class={"toggle bg-opacity-100"} {onchange}/>
                     <p>{"Preview"}</p>
                 </div>
-                <div class={"border rounded-lg p-2 shadow-lg"}>
-                    {editor}
-                </div>
+                {editor}
             </div>
         </PageBase>
     }
