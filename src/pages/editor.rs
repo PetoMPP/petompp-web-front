@@ -1,7 +1,10 @@
 use crate::{
     api::client::{ApiClient, RequestError},
     components::{
-        atoms::{collapse::Collapse, loading::Loading, resource_select::ResourceSelect},
+        atoms::{
+            collapse::Collapse, loading::Loading, markdown::Editable,
+            resource_select::ResourceSelect,
+        },
         organisms::{
             blog::blog_meta_editor::BlogMetaEditor,
             editor::atoms::{delete_button::DeleteButton, save_button::SaveButton},
@@ -11,6 +14,7 @@ use crate::{
         state::State,
     },
     data::{
+        locales::{store::LocalesStore, tk::TK},
         resources::{
             id::{ResId, ResourceId},
             store::LocalStore,
@@ -49,6 +53,7 @@ pub fn editor() -> Html {
         .unwrap_or_default();
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (local_store, local_dispatch) = use_store::<LocalStore>();
+    let (locales_store, _) = use_store::<LocalesStore>();
     let navigator = use_navigator().unwrap();
     let state = use_state_eq(|| EditorState::Ok(None));
     let is_preview = use_state_eq(|| false);
@@ -208,9 +213,7 @@ pub fn editor() -> Html {
             </div>
         },
         State::Loading => html! {
-            <div class={"w-full flex rounded-lg bg-base-100"}>
-                <span class={"flex mx-auto py-4 loading loading-ring loading-lg"}/>
-            </div>
+            <Loading resource={locales_store.get(TK::PageContents)} />
         },
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
@@ -218,7 +221,7 @@ pub fn editor() -> Html {
             }
             html! {
                 <div class={"w-full flex flex-col gap-4 rounded-lg bg-error"}>
-                    <p class={"mx-auto py-4 text-error-content text-xl font-semibold"}>{"Something went wrong!"}</p>
+                    <p class={"mx-auto py-4 text-error-content text-xl font-semibold"}>{locales_store.get(TK::ErrorOccured)}</p>
                     <p class={"mx-auto py-4 text-error-content"}>{e.to_string()}</p>
                 </div>
             }
@@ -248,21 +251,24 @@ pub fn editor() -> Html {
             })
         }
     };
-    let clear_local = match (&resid, &lang) {
-        (Some(resid), Some(lang)) => match local_store.get(&resid, lang.key()) {
+    let clear_local = match &*state {
+        State::Ok(Some((is_new, (resid, lang), _))) => match local_store.get(&resid, lang.key()) {
             Some(_) => {
                 let navigator = navigator.clone();
                 let local_dispatch = local_dispatch.clone();
                 let resid = resid.clone();
                 let lang = lang.clone();
+                let is_new = is_new.unwrap_or_default();
                 Some(html! {
                     <button class={"btn btn-warning grow"} onclick={Callback::from(move |_| {
                         local_dispatch.reduce_mut(|store| {
                             store.remove(&resid, lang.key());
                         });
-                        navigator.push(&Route::Editor);
+                        if is_new {
+                            navigator.push(&Route::Editor);
+                        }
                     })}>
-                    {"Discard"}
+                    {locales_store.get(TK::Discard)}
                     </button>
                 })
             }
@@ -304,13 +310,13 @@ pub fn editor() -> Html {
                     });
                 });
                 html! {
-                    <Collapse label={"Blog Post Metadata"}>
+                    <Collapse label={locales_store.get(TK::BlogPostMetadata)}>
                         <BlogMetaEditor data={meta.clone()} {ondatachanged} />
                     </Collapse>
                 }
             }),
             State::Loading => {
-                Some(html! { <Loading resource={"blog post metadata".to_string()} /> })
+                Some(html! { <Loading resource={locales_store.get(TK::BlogPostMetadata)} /> })
             }
             _ => None,
         },
@@ -322,15 +328,15 @@ pub fn editor() -> Html {
     };
     let edit_text = {
         let edit_pref = match is_new {
-            Some(true) => "Creating:",
-            _ => "Editing:",
+            Some(true) => locales_store.get(TK::Creating),
+            _ => locales_store.get(TK::Editing),
         };
         let edit_text = match &resid {
-            Some(ResId::Blob(_)) => "Blog post:",
-            Some(ResId::ResKey(_)) => "Resource:",
-            None => "Nothing selected:",
+            Some(ResId::Blob(_)) => locales_store.get(TK::BlogPost),
+            Some(ResId::ResKey(_)) => locales_store.get(TK::Resource),
+            None => locales_store.get(TK::NothingSelected),
         };
-        format!("{} {}", edit_pref, edit_text)
+        format!("{}: {}:", edit_pref, edit_text)
     };
     let onchange = Callback::from(move |e: Event| {
         let element: HtmlInputElement = e.target_unchecked_into();
@@ -362,17 +368,13 @@ pub fn editor() -> Html {
 
     html! {
         <PageBase>
-            <div class={"prose"}>
-                <h1>{"Editor"}</h1>
-                <p>{"This is the editor page. Here you can edit the content of the page selected."}</p>
-                <p/>
-                </div>
+            <Editable resid={ResId::ResKey("editor-intro".to_string())}/>
             <div class={"flex flex-col lg:flex-row gap-4 pb-6 items-center"}>
                 <h2 class={"flex font-semibold text-2xl"}>{edit_text}</h2>
                 <ResourceSelect resid={resid.clone()} lang={lang.clone()} {onselectedchanged} state={Some((*state).clone())}/>
-                {go_back}
-                {reload}
-                <div class={"flex flex-row gap-4 lg:w-auto w-full"}>
+                <div class={"flex flex-row flex-wrap gap-4 lg:w-auto w-full"}>
+                    {go_back}
+                    {reload}
                     {clear_local}
                     <SaveButton state={(*state).clone()} {onstatechanged} resid={resid.clone()} lang={lang.clone()}/>
                     {delete_button}
@@ -381,9 +383,9 @@ pub fn editor() -> Html {
             <div class={"flex flex-col gap-6"}>
                 {meta_editor}
                 <div id={"swap"} class={"flex flex-row gap-4"}>
-                    <p>{"Editor"}</p>
+                    <p>{locales_store.get(TK::Editor)}</p>
                     <input type={"checkbox"} class={"toggle bg-opacity-100"} {onchange}/>
-                    <p>{"Preview"}</p>
+                    <p>{locales_store.get(TK::Preview)}</p>
                 </div>
                 {editor}
             </div>

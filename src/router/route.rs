@@ -1,8 +1,14 @@
-use super::blog::BlogRoute;
 use crate::{
     pages::{
-        about::About, contact::Contact, editor::Editor, home::Home, login::Login,
-        not_found::NotFound, projects::Projects, register::Register,
+        about::About,
+        blog::{blog::Blog, blog_post::BlogPost},
+        contact::Contact,
+        editor::Editor,
+        home::Home,
+        login::Login,
+        not_found::NotFound,
+        projects::Projects,
+        register::Register,
     },
     router::admin::AdminRoute,
 };
@@ -30,16 +36,15 @@ pub enum Route {
     Register,
     #[at("/editor")]
     Editor,
+    #[at("/blog")]
+    Blog,
+    #[at("/blog/post/:id")]
+    BlogPost { id: String },
     // Admin routes
     #[at("/admin")]
     AdminRoot,
     #[at("/admin/*")]
     Admin,
-    // Blog routes
-    #[at("/blog/")]
-    BlogRoot,
-    #[at("/blog/*")]
-    Blog,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -56,9 +61,8 @@ impl Route {
         match self {
             Route::Root | Route::Home => html! {<Home />},
             Route::Projects => html! {<Projects />},
-            Route::Blog | Route::BlogRoot => {
-                html! {<Switch<BlogRoute> render={BlogRoute::switch} />}
-            }
+            Route::Blog => html! {<Blog />},
+            Route::BlogPost { id } => html! {<BlogPost {id} />},
             Route::About => html! {<About />},
             Route::Contact => html! {<Contact />},
             Route::Login => html! {<Login />},
@@ -92,10 +96,6 @@ impl Route {
                     let route = AdminRoute::recognize(path)?;
                     Some(Self::get_onclick(route, navigator))
                 }
-                Route::Blog | Route::BlogRoot => {
-                    let route = BlogRoute::recognize(path)?;
-                    Some(Self::get_onclick(route, navigator))
-                }
                 _ => Some(Self::get_onclick(route, navigator)),
             },
             None => None,
@@ -111,19 +111,6 @@ impl Route {
             Some(route) => match route {
                 Route::Admin | Route::AdminRoot => {
                     let route = AdminRoute::recognize(path)?;
-                    match query {
-                        Some(query) => match navigator.push_with_query(&route, query) {
-                            Ok(_) => Some(()),
-                            Err(_) => None,
-                        },
-                        None => {
-                            navigator.push(&route);
-                            Some(())
-                        }
-                    }
-                }
-                Route::Blog | Route::BlogRoot => {
-                    let route = BlogRoute::recognize(path)?;
                     match query {
                         Some(query) => match navigator.push_with_query(&route, query) {
                             Ok(_) => Some(()),

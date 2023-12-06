@@ -1,9 +1,13 @@
 use crate::{
     components::organisms::user_box::UserBox,
-    data::locales::{store::LocalesStore, tk::TK},
+    data::{
+        locales::{store::LocalesStore, tk::TK},
+        session::SessionStore,
+    },
     router::route::Route,
     utils::style::get_svg_bg_mask_style,
 };
+use petompp_web_models::models::user::RoleData;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -47,6 +51,7 @@ fn menu_button() -> Html {
 
 #[function_component(MenuDropdown)]
 fn menu_dropdown() -> Html {
+    let (session_store, _) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let navigator = use_navigator().unwrap();
     let get_onclick = |route: Route| {
@@ -55,15 +60,22 @@ fn menu_dropdown() -> Html {
             navigator.push(&route);
         })
     };
+    let editor_btn = match &session_store.user {
+        Some(u) if u.role == RoleData::Admin => Some(
+            html! {<a onclick={get_onclick.clone()(Route::Editor)} class={"lg:hidden btn btn-accent rounded-none rounded-r-lg"}>{locales_store.get(TK::Editor)}</a>},
+        ),
+        _ => None,
+    };
     html! {
         <div class={"drawer-side z-10"}>
             <label for={"menu-drawer"} class={"drawer-overlay"} />
             <div class={"-ml-1 mt-20 flex flex-col gap-2 min-w-[6rem]"}>
-                <a onclick={get_onclick.clone()(Route::Home)} class={"lg:hidden btn btn-neutral borderen-none bordered-r-lg"}>{locales_store.get(TK::Home)}</a>
-                <a onclick={get_onclick.clone()(Route::Projects)} class={"lg:hidden btn btn-neutral borderen-none bordered-r-lg"}>{locales_store.get(TK::Projects)}</a>
-                <a onclick={get_onclick.clone()(Route::BlogRoot)} class={"lg:hidden btn btn-neutral borderen-none bordered-r-lg"}>{locales_store.get(TK::Blog)}</a>
-                <a onclick={get_onclick.clone()(Route::About)} class={"lg:hidden btn btn-neutral borderen-none bordered-r-lg"}>{locales_store.get(TK::About)}</a>
-                <a onclick={get_onclick.clone()(Route::Contact)} class={"lg:hidden btn btn-neutral borderen-none bordered-r-lg"}>{locales_store.get(TK::Contact)}</a>
+                <a onclick={get_onclick.clone()(Route::Home)} class={"lg:hidden btn btn-neutral rounded-none rounded-r-lg"}>{locales_store.get(TK::Home)}</a>
+                <a onclick={get_onclick.clone()(Route::Projects)} class={"lg:hidden btn btn-neutral rounded-none rounded-r-lg"}>{locales_store.get(TK::Projects)}</a>
+                <a onclick={get_onclick.clone()(Route::Blog)} class={"lg:hidden btn btn-neutral rounded-none rounded-r-lg"}>{locales_store.get(TK::Blog)}</a>
+                {editor_btn}
+                <a onclick={get_onclick.clone()(Route::About)} class={"lg:hidden btn btn-neutral rounded-none rounded-r-lg"}>{locales_store.get(TK::About)}</a>
+                <a onclick={get_onclick.clone()(Route::Contact)} class={"lg:hidden btn btn-neutral rounded-none rounded-r-lg"}>{locales_store.get(TK::Contact)}</a>
                 <UserBox />
             </div>
         </div>
