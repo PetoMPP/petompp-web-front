@@ -63,7 +63,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
                         return;
                     }
                 };
-                data.set(State::Ok(Some((meta, md, locales_store.curr.clone()))));
+                data.set(State::Ok(Some((meta, md, locales_store.curr))));
             });
         },
         (props.clone(), data.clone(), locales_store.clone()),

@@ -7,7 +7,8 @@ use crate::{
         },
         organisms::blog::blog_image_select::BlogImageSelect,
     },
-    utils::{ext::Mergable, style::get_svg_bg_mask_style}, data::locales::{store::LocalesStore, tk::TK},
+    data::locales::{store::LocalesStore, tk::TK},
+    utils::{ext::Mergable, style::get_svg_bg_mask_style},
 };
 use petompp_web_models::models::{
     blog_data::BlogMetaData,

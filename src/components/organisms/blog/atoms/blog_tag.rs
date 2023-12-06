@@ -33,7 +33,7 @@ pub fn blog_tag(props: &BlogTagProps) -> Html {
                 curr_tags
                     .tags()
                     .iter()
-                    .chain(vec![tag].iter())
+                    .chain([tag].iter())
                     .cloned()
                     .collect::<Vec<_>>(),
             ),

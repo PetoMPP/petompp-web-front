@@ -24,14 +24,14 @@ pub fn delete_button(props: &DeleteButtonProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let navigator = use_navigator().unwrap();
     let resid = props.resid.clone();
-    let lang = props.lang.clone();
+    let lang = props.lang;
     let err = use_state(|| None);
     let onclick = {
         let err = err.clone();
         Callback::from(move |_| {
             let navigator = navigator.clone();
             let resid = resid.clone();
-            let lang = lang.clone();
+            let lang = lang;
             let err = err.clone();
             let token = session_store.token.clone().unwrap_or_default();
             spawn_local(async move {

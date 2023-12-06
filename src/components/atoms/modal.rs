@@ -124,10 +124,7 @@ pub fn error_modal() -> Html {
     }
 }
 
-pub fn show_error(
-    msg: impl Into<String>,
-    redirect: Option<(&Route, &Navigator)>,
-) {
+pub fn show_error(msg: impl Into<String>, redirect: Option<(&Route, &Navigator)>) {
     let msg: String = msg.into();
     let modal: HtmlDialogElement = web_sys::window()
         .unwrap()
