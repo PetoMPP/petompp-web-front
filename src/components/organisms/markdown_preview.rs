@@ -1,8 +1,9 @@
 use crate::{
     components::atoms::{link::HrefLink, markdown::Markdown},
     data::resources::id::ResId,
-    pages::{blog::blog_post::BlogPostMeta, page_base::PageBase},
-    AppBase, router::route::Route,
+    pages::{blog_post::BlogPostMeta, page_base::PageBase},
+    router::route::Route,
+    AppBase,
 };
 use petompp_web_models::models::blog_data::BlogMetaData;
 use yew::prelude::*;

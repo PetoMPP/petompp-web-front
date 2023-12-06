@@ -31,7 +31,7 @@ impl LocalStore {
                     .split('.')
                     .fold((0usize, 0), |acc, x| (acc.0 + x.len() + 1, x.len()));
                 let x = x.0 - x.1 - 1 - 1;
-                ResId::from_str(&k[..x].to_string()).ok()
+                ResId::from_str(&k[..x]).ok()
             })
             .collect()
     }
