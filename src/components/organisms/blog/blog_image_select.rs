@@ -88,7 +88,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
         |state| {
             let state = state.clone();
             match &*state {
-                State::Ok(Some(_)) | State::Loading | State::Err(_) => return,
+                State::Ok(Some(_)) | State::Loading | State::Err(_) => (),
                 _ => {
                     spawn_local(async move {
                         match ApiClient::get_img_paths().await {
@@ -136,8 +136,8 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
         Callback::from(move |path: String| match path.as_str() {
             ".." => {
                 let path = curr
-                    .trim_end_matches("/")
-                    .rsplit_once("/")
+                    .trim_end_matches('/')
+                    .rsplit_once('/')
                     .map(|(r, _)| r.to_string())
                     .unwrap_or(curr.to_string());
                 curr.set(format!("{}/", path));
@@ -159,7 +159,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
                     .filter_map(move |p| {
                         let curr = curr.clone();
                         let pt = p.strip_prefix(&*curr)?;
-                        let Some((root, _rest)) = pt.split_once("/") else {
+                        let Some((root, _rest)) = pt.split_once('/') else {
                             return Some(BrowseItem::File(pt.to_string()));
                         };
                         if !used.contains(&root) {
@@ -210,7 +210,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
             let val = selected.as_ref().and_then(|s| match s {
                 BrowseItem::Dir(_) => None,
                 BrowseItem::File(name) => {
-                    Some(format!("{}{}", curr.as_str()[1..].to_string(), name))
+                    Some(format!("{}{}", &curr.as_str()[1..], name))
                 }
             });
             props.ondatachanged.emit(val)
@@ -283,7 +283,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
             let element = e.target_unchecked_into::<HtmlInputElement>();
             let img = element.files().unwrap().get(0).unwrap();
             let name = img.name();
-            let name = match name.split_once(".") {
+            let name = match name.split_once('.') {
                 Some((name, _)) => name.to_string(),
                 None => name,
             };

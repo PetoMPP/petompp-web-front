@@ -25,7 +25,10 @@ const PATH_QUERY_NAME: &str = "the-way-back-to-where-you-came-from";
 pub fn login_redirect() -> Html {
     let navigator = use_navigator().unwrap();
     let location = use_location().unwrap();
-    let mut pairs = BTreeMap::from_iter(vec![(PATH_QUERY_NAME.to_string(), location.path().to_string())]);
+    let mut pairs = BTreeMap::from_iter(vec![(
+        PATH_QUERY_NAME.to_string(),
+        location.path().to_string(),
+    )]);
     if let Ok(query) = serde_urlencoded::from_str::<BTreeMap<String, String>>(
         location.query_str()[1..].to_string().as_str(),
     ) {
@@ -86,7 +89,7 @@ pub fn login() -> Html {
                         Route::navigate_from_str(&path, Some(&returnto), history.clone()).unwrap_or_else(|| history.push(&Route::Home));
                     }
                     Err(error) => match error {
-                        api::client::RequestError::Endpoint(_, message) => error_state.set(Some(message.localize(&*locales_store))),
+                        api::client::RequestError::Endpoint(_, message) => error_state.set(Some(message.localize(&locales_store))),
                         api::client::RequestError::Parse(message) | api::client::RequestError::Network(message) => {
                             show_error(message, Some((&Route::Home, &history)))
                         }

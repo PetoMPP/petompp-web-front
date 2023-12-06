@@ -27,7 +27,7 @@ pub fn save_button(props: &Props) -> Html {
     let (Some(resid), Some(lang)) = (&props.resid, &props.lang) else {
         return html! {};
     };
-    let Some((value, meta)) = local_store.get(&resid, lang.key()) else {
+    let Some((value, meta)) = local_store.get(resid, lang.key()) else {
         return html! {};
     };
     if let EditorState::Loading = &props.state {
@@ -36,19 +36,16 @@ pub fn save_button(props: &Props) -> Html {
     let onstatechange = props.onstatechanged.clone();
     let local_dispatch = local_dispatch.clone();
     let resid = resid.clone();
-    let lang = lang.clone();
+    let lang = *lang;
     let value = value.clone();
     let meta = meta.clone();
     let token = session_store.token.clone().unwrap_or_default();
-    let isnew = match &props.state {
-        EditorState::Ok(Some((Some(true), _, _))) => true,
-        _ => false,
-    };
+    let isnew = matches!(&props.state, EditorState::Ok(Some((Some(true), _, _))));
     let onclick = Callback::from(move |_| {
         let onstatechange = onstatechange.clone();
         let local_dispatch = local_dispatch.clone();
         let resid = resid.clone();
-        let lang = lang.clone();
+        let lang = lang;
         let value = value.clone();
         let meta = meta.clone();
         let token = token.clone();

@@ -17,14 +17,14 @@ impl TryInto<(ResId, Country)> for ResourceId {
     fn try_into(self) -> Result<(ResId, Country), Self::Error> {
         match (self.key, self.blob) {
             (Some(key), None) => {
-                let (path, lang) = key.split_once("@").ok_or("invalid key")?;
+                let (path, lang) = key.split_once('@').ok_or("invalid key")?;
                 Ok((
                     ResId::ResKey(path.to_string()),
                     Country::try_from(lang).map_err(|_| "invalid lang")?,
                 ))
             }
             (None, Some(blob)) => {
-                let (path, lang) = blob.split_once("@").ok_or("invalid blob")?;
+                let (path, lang) = blob.split_once('@').ok_or("invalid blob")?;
                 Ok((
                     ResId::Blob(path.to_string()),
                     Country::try_from(lang).map_err(|_| "invalid lang")?,
@@ -69,7 +69,7 @@ impl FromStr for ResId {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (kind, id) = s.split_once(":").ok_or("invalid id")?;
+        let (kind, id) = s.split_once(':').ok_or("invalid id")?;
         match kind {
             "reskey" => Ok(Self::ResKey(id.to_string())),
             "blob" => Ok(Self::Blob(id.to_string())),

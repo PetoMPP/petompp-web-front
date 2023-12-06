@@ -65,16 +65,16 @@ pub fn register() -> Html {
                 match error {
                     RequestError::Endpoint(_, error) => {
                         match &error {
-                            Error::UserNameTaken(_) => error_state.set(Some(RegisterError::Username(error.localize(&*locales_store)))),
+                            Error::UserNameTaken(_) => error_state.set(Some(RegisterError::Username(error.localize(&locales_store)))),
                             Error::ValidationError(ve) => match ve {
                                 ValidationError::Username(ue) => match ue {
                                     UsernameValidationError::InvalidLength(_, _) |
-                                    UsernameValidationError::InvalidCharacters(_) => error_state.set(Some(RegisterError::Username(error.localize(&*locales_store)))),
+                                    UsernameValidationError::InvalidCharacters(_) => error_state.set(Some(RegisterError::Username(error.localize(&locales_store)))),
                                 },
-                                ValidationError::Password(_) => error_state.set(Some(RegisterError::Password(error.localize(&*locales_store)))),
-                                _ => show_error(error.localize(&*locales_store), Some((&Route::Home, &history))),
+                                ValidationError::Password(_) => error_state.set(Some(RegisterError::Password(error.localize(&locales_store)))),
+                                _ => show_error(error.localize(&locales_store), Some((&Route::Home, &history))),
                             },
-                            _ => show_error(error.localize(&*locales_store), Some((&Route::Home, &history))),
+                            _ => show_error(error.localize(&locales_store), Some((&Route::Home, &history))),
                         }
                     }
                     RequestError::Parse(error) | RequestError::Network(error) => {

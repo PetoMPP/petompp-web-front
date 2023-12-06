@@ -48,8 +48,7 @@ pub fn editor() -> Html {
     let (resid, lang) = location
         .query::<ResourceId>()
         .ok()
-        .and_then(|r| TryInto::<(ResId, Country)>::try_into(r).ok())
-        .and_then(|(r, l)| Some((Some(r), Some(l))))
+        .and_then(|r| TryInto::<(ResId, Country)>::try_into(r).ok()).map(|(r, l)| (Some(r), Some(l)))
         .unwrap_or_default();
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (local_store, local_dispatch) = use_store::<LocalStore>();
@@ -63,7 +62,7 @@ pub fn editor() -> Html {
                 state.set(State::Ok(None));
                 return;
             };
-            let Some(lang) = lang.clone() else {
+            let Some(lang) = *lang else {
                 state.set(State::Ok(None));
                 return;
             };
@@ -92,7 +91,7 @@ pub fn editor() -> Html {
             spawn_local(async move {
                 // does current resource exist?
                 let (is_new, new_state) = match &resid {
-                    ResId::Blob(p) => match ApiClient::get_post_meta(&p, lang.key()).await {
+                    ResId::Blob(p) => match ApiClient::get_post_meta(p, lang.key()).await {
                         Ok(m) => match resid.get_value(&lang).await {
                             Ok(v) => (false, Some((v, Some(m)))),
                             Err(e) => {
@@ -169,7 +168,7 @@ pub fn editor() -> Html {
         },
         (
             resid.clone(),
-            lang.clone(),
+            lang,
             state.clone(),
             local_store.clone(),
         ),
@@ -188,7 +187,7 @@ pub fn editor() -> Html {
                 let onchanged = {
                     let local_dispatch = local_dispatch.clone();
                     let resid = resid.clone();
-                    let lang = lang.clone();
+                    let lang = *lang;
                     let meta = meta.clone();
                     Callback::from(move |data: String| {
                         local_dispatch.reduce_mut(|store| {
@@ -252,12 +251,12 @@ pub fn editor() -> Html {
         }
     };
     let clear_local = match &*state {
-        State::Ok(Some((is_new, (resid, lang), _))) => match local_store.get(&resid, lang.key()) {
+        State::Ok(Some((is_new, (resid, lang), _))) => match local_store.get(resid, lang.key()) {
             Some(_) => {
                 let navigator = navigator.clone();
                 let local_dispatch = local_dispatch.clone();
                 let resid = resid.clone();
-                let lang = lang.clone();
+                let lang = *lang;
                 let is_new = is_new.unwrap_or_default();
                 Some(html! {
                     <button class={"btn btn-warning grow"} onclick={Callback::from(move |_| {
@@ -293,7 +292,7 @@ pub fn editor() -> Html {
             State::Ok(Some((_, (resid, lang), (value, Some(meta))))) => Some({
                 let local_dispatch = local_dispatch.clone();
                 let resid = resid.clone();
-                let lang = lang.clone();
+                let lang = *lang;
                 let value = value.clone();
                 let ondatachanged = Callback::from(move |data: BlogMetaData| {
                     local_dispatch.reduce_mut(|store| {
@@ -323,7 +322,7 @@ pub fn editor() -> Html {
         _ => None,
     };
     let is_new = match &*state {
-        State::Ok(Some((n, _, _))) => n.clone(),
+        State::Ok(Some((n, _, _))) => *n,
         _ => None,
     };
     let edit_text = {
@@ -361,7 +360,7 @@ pub fn editor() -> Html {
     });
     let delete_button = match (is_new, &resid, &lang) {
         (Some(false), Some(resid), Some(lang)) => Some(html! {
-            <DeleteButton resid={resid.clone()} lang={lang.clone()}/>
+            <DeleteButton resid={resid.clone()} lang={*lang}/>
         }),
         _ => None,
     };
@@ -371,12 +370,12 @@ pub fn editor() -> Html {
             <Editable resid={ResId::ResKey("editor-intro".to_string())}/>
             <div class={"flex flex-col lg:flex-row gap-4 pb-6 items-center"}>
                 <h2 class={"flex font-semibold text-2xl"}>{edit_text}</h2>
-                <ResourceSelect resid={resid.clone()} lang={lang.clone()} {onselectedchanged} state={Some((*state).clone())}/>
+                <ResourceSelect resid={resid.clone()} lang={lang} {onselectedchanged} state={Some((*state).clone())}/>
                 <div class={"flex flex-row flex-wrap gap-4 lg:w-auto w-full"}>
                     {go_back}
                     {reload}
                     {clear_local}
-                    <SaveButton state={(*state).clone()} {onstatechanged} resid={resid.clone()} lang={lang.clone()}/>
+                    <SaveButton state={(*state).clone()} {onstatechanged} resid={resid.clone()} lang={lang}/>
                     {delete_button}
                 </div>
             </div>

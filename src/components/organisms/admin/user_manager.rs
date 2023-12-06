@@ -2,7 +2,10 @@ use crate::{
     api::client::ApiClient,
     async_event,
     components::{
-        atoms::{modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore}, loading::Loading},
+        atoms::{
+            loading::Loading,
+            modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+        },
         state::State,
     },
     data::{

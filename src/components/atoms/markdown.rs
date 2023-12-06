@@ -75,7 +75,7 @@ pub struct EditableProps {
 pub fn editable(props: &EditableProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (_, session_dispatch) = use_store::<SessionStore>();
-    let (resid, lang) = (props.resid.clone(), locales_store.curr.clone());
+    let (resid, lang) = (props.resid.clone(), locales_store.curr);
     let markdown = use_state_eq(|| State::Ok(None));
     {
         let markdown = markdown.clone();
@@ -129,12 +129,12 @@ pub fn edit_button(props: &EditButtonProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (session_store, _) = use_store::<SessionStore>();
     let navigator = use_navigator().unwrap();
-    let (resid, lang) = (props.resid.clone(), locales_store.curr.clone());
+    let (resid, lang) = (props.resid.clone(), locales_store.curr);
     let edit_onclick = Callback::from(move |_| {
         navigator
             .push_with_query(
                 &Route::Editor,
-                &ResourceId::from((resid.clone(), lang.clone())),
+                &ResourceId::from((resid.clone(), lang)),
             )
             .unwrap()
     });

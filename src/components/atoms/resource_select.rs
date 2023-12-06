@@ -62,7 +62,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     let last_state = use_state(|| None);
     use_effect_with_deps(
         |(data, token, state, last_state, local_store)| {
-            match (&*state, &**last_state) {
+            match (state, &**last_state) {
                 (Some(State::Ok(Some(_))), Some(State::Ok(Some(_))))
                 | (Some(State::Ok(None)), Some(State::Ok(None)))
                 | (Some(State::Loading), Some(State::Loading)) => return,
@@ -113,7 +113,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
         Callback::from(move |r| {
             props.onselectedchanged.emit(ResourceId::from((
                 r,
-                props.lang.clone().unwrap_or_default(),
+                props.lang.unwrap_or_default(),
             )))
         })
     };
@@ -128,7 +128,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     let list = match (*data).clone() {
         State::Ok(Some((resources, posts))) => {
             html! {
-                <ResourceList currentresid={props.resid.clone()} currentlang={props.lang.clone()} {resources} {posts} onselectedchanged={onselectedchanged_resid}/>
+                <ResourceList currentresid={props.resid.clone()} currentlang={props.lang} {resources} {posts} onselectedchanged={onselectedchanged_resid}/>
             }
         }
         State::Ok(None) | State::Loading => html! {
@@ -145,7 +145,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     };
     let lang_select = props.lang.as_ref().map(|c| {
         html! {
-            <FlagSelect country={c.clone()} onselectedchanged={onselectedchanged_lang} />
+            <FlagSelect country={*c} onselectedchanged={onselectedchanged_lang} />
         }
     });
 
@@ -175,7 +175,7 @@ struct ResourceListProps {
 fn resource_list(props: &ResourceListProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let mode: UseStateHandle<Mode> = use_state_eq(|| {
-        (&props.currentresid)
+        props.currentresid
             .as_ref()
             .map(|r| r.into())
             .unwrap_or(Mode::Resources)
@@ -194,7 +194,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     let res_into_button = |r: &ResId, cache_only: bool| {
         let id = r.id();
         let mut class = classes!("btn", "flex");
-        if props.currentresid.as_ref() == Some(&r) {
+        if props.currentresid.as_ref() == Some(r) {
             class.push("btn-primary");
         };
         if cache_only {
@@ -208,7 +208,6 @@ fn resource_list(props: &ResourceListProps) -> Html {
     let vec_into_elements = |vec: Vec<(&ResId, bool)>| {
         vec.clone()
             .chunks(3)
-            .into_iter()
             .map(|x| {
                 x.iter()
                     .cloned()
@@ -263,7 +262,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
                 let new_element_input = new_element_input.clone();
                 let onselectedchanged = props.onselectedchanged.clone();
                 let mode = mode.clone();
-                let currlang = props.currentlang.clone();
+                let currlang = props.currentlang;
                 Callback::from(move |e: KeyboardEvent| {
                     if e.key() != "Enter" {
                         return;
@@ -280,7 +279,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
                     local_dispatch.reduce_mut(|s| {
                         s.insert(
                             resid.clone(),
-                            currlang.clone().unwrap_or_default().key(),
+                            currlang.unwrap_or_default().key(),
                             String::new(),
                             meta.clone(),
                         );
