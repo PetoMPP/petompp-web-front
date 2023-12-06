@@ -30,7 +30,7 @@ pub struct DateProps {
 #[function_component(CreatedDateDisplay)]
 pub fn created_date_display(props: &DateProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
-    let date = DateTime::<Local>::from(props.date.clone());
+    let date = DateTime::<Local>::from(props.date);
     let tooltip = format!(
         "{}: {}",
         locales_store.get(TK::Created),
@@ -51,7 +51,7 @@ pub fn created_date_display(props: &DateProps) -> Html {
 #[function_component(UpdatedDateDisplay)]
 pub fn updated_date_display(props: &DateProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
-    let date = DateTime::<Local>::from(props.date.clone());
+    let date = DateTime::<Local>::from(props.date);
     let tooltip = format!(
         "{}: {}",
         locales_store.get(TK::Updated),
