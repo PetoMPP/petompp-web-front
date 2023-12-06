@@ -1,6 +1,7 @@
 use crate::{
     api::client::ApiClient,
     data::{
+        locales::{store::LocalesStore, tk::TK},
         resources::{id::ResId, store::LocalStore},
         session::SessionStore,
     },
@@ -22,6 +23,7 @@ pub struct Props {
 pub fn save_button(props: &Props) -> Html {
     let (session_store, _) = use_store::<SessionStore>();
     let (local_store, local_dispatch) = use_store::<LocalStore>();
+    let (locales_store, _) = use_store::<LocalesStore>();
     let (Some(resid), Some(lang)) = (&props.resid, &props.lang) else {
         return html! {};
     };
@@ -29,11 +31,7 @@ pub fn save_button(props: &Props) -> Html {
         return html! {};
     };
     if let EditorState::Loading = &props.state {
-        return html! {
-            <div class={"w-full flex rounded-lg bg-base-100"}>
-                <span class={"flex mx-auto py-4 loading loading-ring loading-lg"}/>
-            </div>
-        };
+        return html! {};
     }
     let onstatechange = props.onstatechanged.clone();
     let local_dispatch = local_dispatch.clone();
@@ -103,7 +101,7 @@ pub fn save_button(props: &Props) -> Html {
     });
     html! {
         <button class={"btn btn-success grow"} {onclick}>
-        {"Save"}
+        {locales_store.get(TK::Save)}
         </button>
     }
 }

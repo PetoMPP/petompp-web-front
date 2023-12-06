@@ -3,6 +3,7 @@ Home: Home
 Projects: Projects
 About: About
 Contact: Contact
+Loading: Loading
 Ok: Ok
 Cancel: Cancel
 Save: Save
@@ -29,14 +30,32 @@ Delete: Delete
 DeleteUserQuestion: Do you want to delete user %{0}?
 ProjectsDescription: This is where I will put my projects.
 Edit: Edit
+Editing: Editing
 Editor: Editor
+PageContents: Page Contents
 Preview: Preview
 SaveDraft: Save Draft
+Resource: Resource
+NewResource: New Resource
+SelectResource: Select Resource
+Resources: Resources
+AvailableResources: Available Resources
 Blog: Blog
+BlogPost: Blog post
+NewBlogPost: New blog post
+BlogPosts: Blog posts
+BlogPostMetadata: Blog post metadata
 BackToBlogPosts: "↩ back to posts.."
-CreateNewBlogPost: "Create new blog post.."
+Title: Title
+Summary: Summary
+Tags: Tags
+Image: Image
+EnterDirname: Enter directory name..
+EnterTag: Enter tag..
 Created: Created
+Creating: Creating
 Updated: Updated
+NothingSelected: Nothing selected
 ErrorOccured: An error has occured!
 # Errors
 E_Auth_MissingClaim: Authentication failed. Missing claim "%{0}".

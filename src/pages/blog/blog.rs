@@ -4,14 +4,11 @@ use crate::components::state::State;
 use crate::data::locales::store::LocalesStore;
 use crate::data::locales::tk::TK;
 use crate::data::resources::id::ResId;
-use crate::data::session::SessionStore;
-use crate::router::blog::BlogRoute;
 use crate::{
     components::{atoms::markdown::Editable, organisms::blog::blog_summary::BlogSummary},
     pages::page_base::PageBase,
 };
 use petompp_web_models::models::tag::Tags;
-use petompp_web_models::models::user::RoleData;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -21,9 +18,7 @@ use yewdux::prelude::*;
 pub fn blog() -> Html {
     let location = use_location().unwrap();
     let tags = location.query::<Tags>().unwrap_or_default();
-    let (session_store, _) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
-    let navigator = use_navigator().unwrap();
     let data = use_state(|| State::Ok(None));
     use_effect_with_deps(
         move |data| {
@@ -55,31 +50,15 @@ pub fn blog() -> Html {
                         <BlogSummary {meta}/>
                     }
                 });
-            let new_post_button = match &session_store.user {
-                Some(u) if u.role == RoleData::Admin => {
-                    let onclick = Callback::from(move |_| navigator.push(&BlogRoute::New));
-                    Some(html! {
-                        <div class={"flex w-full justify-end py-2"}>
-                            <button class={"flex btn btn-primary btn-outline"} {onclick}>
-                                {locales_store.get(TK::CreateNewBlogPost)}
-                            </button>
-                        </div>
-                    })
-                }
-                _ => None,
-            };
 
             html! {
-                <>
-                {new_post_button}
                 <div class={"flex flex-col gap-2"}>
                     {for summaries}
                 </div>
-                </>
             }
         }
         State::Loading | State::Ok(None) => html! {
-            <Loading resource={"blog posts".to_string()} />
+            <Loading resource={locales_store.get(TK::BlogPosts)} />
         },
         State::Err(e) => {
             html! {
