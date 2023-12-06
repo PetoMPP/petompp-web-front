@@ -2,8 +2,7 @@ use crate::{
     components::atoms::{link::HrefLink, markdown::Markdown},
     data::resources::id::ResId,
     pages::{blog::blog_post::BlogPostMeta, page_base::PageBase},
-    router::blog::BlogRoute,
-    AppBase,
+    AppBase, router::route::Route,
 };
 use petompp_web_models::models::blog_data::BlogMetaData;
 use yew::prelude::*;
@@ -23,7 +22,7 @@ pub fn markdown_preview(props: &MarkdownPreviewProps) -> Html {
         + "//"
         + location.host().unwrap().as_str()
         + match &props.resid {
-            ResId::Blob(id) => (BlogRoute::Post { id: id.clone() }).to_path(),
+            ResId::Blob(id) => (Route::BlogPost { id: id.clone() }).to_path(),
             ResId::ResKey(id) => "/".to_string() + id.trim_end_matches("-content"),
         }
         .as_str();

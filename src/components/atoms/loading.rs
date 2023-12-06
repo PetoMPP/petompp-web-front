@@ -1,4 +1,6 @@
+use crate::data::locales::{store::LocalesStore, tk::TK};
 use yew::prelude::*;
+use yewdux::prelude::*;
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct LoadingProps {
@@ -7,10 +9,15 @@ pub struct LoadingProps {
 
 #[function_component(Loading)]
 pub fn loading(props: &LoadingProps) -> Html {
-    let text = match &props.resource {
-        Some(name) => format!("Loading {}...", name),
-        None => "Loading...".to_string(),
-    };
+    let (locales_store, _) = use_store::<LocalesStore>();
+    let text = locales_store.get(TK::Loading)
+        + props
+            .resource
+            .as_ref()
+            .map(|s| format!(": {}", s))
+            .unwrap_or_default()
+            .as_str()
+        + "...";
     html! {
         <div class={"w-full flex rounded-lg"}>
             <div class={"mx-auto flex flex-row gap-2 rounded-lg"}>

@@ -99,7 +99,7 @@ pub fn editable(props: &EditableProps) -> Html {
             </div>
         },
         State::Ok(None) | State::Loading => html! {
-            <Loading resource={"page content".to_string()} />
+            <Loading resource={locales_store.get(TK::PageContents)} />
         },
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {

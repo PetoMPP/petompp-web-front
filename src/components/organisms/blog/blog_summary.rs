@@ -2,7 +2,7 @@ use super::atoms::blog_tag::BlogTag;
 use crate::{
     api::client::BlobClient,
     components::atoms::date_display::{CreatedDateDisplay, UpdatedDateDisplay},
-    router::blog::BlogRoute,
+    router::route::Route,
 };
 use petompp_web_models::models::blog_data::BlogMetaData;
 use yew::prelude::*;
@@ -29,7 +29,7 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
     };
     let onclick = {
         let id = props.meta.id.clone();
-        Callback::from(move |_| navigator.push(&BlogRoute::Post { id: id.clone() }))
+        Callback::from(move |_| navigator.push(&Route::BlogPost { id: id.clone() }))
     };
 
     html! {
