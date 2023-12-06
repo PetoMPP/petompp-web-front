@@ -1,5 +1,7 @@
 pub mod about;
 pub mod admin;
+pub mod blog;
+pub mod blog_post;
 pub mod contact;
 pub mod editor;
 pub mod home;
@@ -8,4 +10,3 @@ pub mod not_found;
 pub mod page_base;
 pub mod projects;
 pub mod register;
-pub mod blog;

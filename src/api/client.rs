@@ -329,25 +329,25 @@ impl ApiClient {
         token: &str,
         value: &BlogData,
     ) -> Result<(), RequestError> {
-        Ok(Self::send_json(
+        Self::send_json(
             Method::POST,
             format!("api/v1/blog/{}/{}", id, lang).as_str(),
             Some(token),
             Some(&value),
         )
         .await
-        .map(|_: String| ())?)
+        .map(|_: String| ())
     }
 
     pub async fn delete_post(id: &str, lang: &str, token: &str) -> Result<(), RequestError> {
-        Ok(Self::send_json(
+        Self::send_json(
             Method::DELETE,
             format!("api/v1/blog/{}/{}", id, lang).as_str(),
             Some(token),
             Option::<&String>::None,
         )
         .await
-        .map(|_: String| ())?)
+        .map(|_: String| ())
     }
 
     /// Ok((resources, posts))
@@ -356,7 +356,7 @@ impl ApiClient {
             ApiClient::get_resource_keys(token)
                 .await?
                 .into_iter()
-                .map(|k| ResId::ResKey(k))
+                .map(ResId::ResKey)
                 .collect::<Vec<_>>(),
             {
                 let mut posts = ApiClient::get_posts_meta(None)

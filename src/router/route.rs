@@ -1,14 +1,7 @@
 use crate::{
     pages::{
-        about::About,
-        blog::{blog::Blog, blog_post::BlogPost},
-        contact::Contact,
-        editor::Editor,
-        home::Home,
-        login::Login,
-        not_found::NotFound,
-        projects::Projects,
-        register::Register,
+        about::About, blog::Blog, blog_post::BlogPost, contact::Contact, editor::Editor,
+        home::Home, login::Login, not_found::NotFound, projects::Projects, register::Register,
     },
     router::admin::AdminRoute,
 };
