@@ -3,7 +3,12 @@ use std::path::Path;
 use crate::{
     api::client::{ApiClient, BlobClient},
     components::{atoms::loading::Loading, state::State},
-    data::{session::SessionStore, window::WindowStore},
+    data::{
+        locales::{store::LocalesStore, tk::TK},
+        session::SessionStore,
+        window::WindowStore,
+    },
+    utils::style::get_svg_bg_mask_style,
 };
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement};
@@ -20,6 +25,7 @@ const ID: &str = "image-browser";
 
 #[function_component(BlogImageSelect)]
 pub fn blog_image_select(props: &BlogImageSelectProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let force_open = use_state(|| false);
     let src = BlobClient::get_url(
         format!("image-upload/{}", props.data.clone().unwrap_or_default()).as_str(),
@@ -46,13 +52,13 @@ pub fn blog_image_select(props: &BlogImageSelectProps) -> Html {
     };
     html! {
         <div class={"flex flex-col gap-2"}>
-            <div class={"border p-2 rounded-lg shadow-md w-full"}>
+            <div class={"border p-2 rounded-lg shadow-md w-full lg:max-h-[35%]"}>
                 <img {src} class={"h-auto mx-auto"}/>
             </div>
             <div class={"w-full"}>
                 <div id={ID} tabindex={"0"} class={dropdown_class}>
                     <div class={"pl-2"}>{props.data.clone().unwrap_or_default()}</div>
-                    <label class={"rounded-l-none btn btn-primary no-animation"} tabindex={"0"}>{"Change"}</label>
+                    <label class={"rounded-l-none btn btn-primary no-animation"} tabindex={"0"}>{locales_store.get(TK::Edit)}</label>
                     <div tabindex={"0"} class={"dropdown-content w-full flex flex-col mb-4 gap-1 z-10"}>
                         <ImageBrowserDialog ondatachanged={props.ondatachanged.clone()} {onforceopenchanged} />
                     </div>
@@ -72,6 +78,7 @@ pub struct ImageBrowserDialogProps {
 pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
     let (window_store, _) = use_store::<WindowStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
+    let (locales_store, _) = use_store::<LocalesStore>();
     let curr = use_state(|| "/".to_string());
     let selected = use_state(|| None);
     let props = props.clone();
@@ -114,7 +121,6 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
                     .and_then(|d| d.get_element_by_id(ID))
                     .and_then(|e| e.dyn_into::<HtmlElement>().ok())
                 {
-                    gloo::console::log!("focus");
                     browser.focus().unwrap();
                 }
             },
@@ -301,10 +307,21 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
             });
         })
     };
-    let mut delete_class = classes!("btn", "btn-xs", "btn-error");
-    if let None = selected.as_ref() {
-        delete_class.push("btn-disabled");
-    }
+    let (delete_class, delete_icon) = match &*selected {
+        Some(b) => (
+            "btn btn-xs btn-error",
+            match b {
+                BrowseItem::Dir(_) => Some(
+                    html! {<div class={"bg-error-content h-5 w-5"} style={get_svg_bg_mask_style("/img/ui/folder-del.svg")}/>},
+                ),
+                BrowseItem::File(_) => Some(
+                    html! {<div class={"bg-error-content h-5 w-5"} style={get_svg_bg_mask_style("/img/ui/file-del.svg")}/>},
+                ),
+            },
+        ),
+        None => ("hidden", None),
+    };
+
     let delete_onclick = {
         let selected = selected.clone();
         let session_store = session_store.clone();
@@ -344,10 +361,12 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
     let buttons = match &*state {
         State::Ok(_) => html! {
             <>
-            <button class={delete_class} onclick={delete_onclick}>{"- delete"}</button>
-            <button class={"btn btn-xs btn-primary"} onclick={add_dir_onclick}>{"+ dir"}</button>
-            <label class={"btn btn-xs btn-primary"} onclick={add_img_onclick}>
-                {"+ img"}
+            <button class={delete_class} onclick={delete_onclick}>{delete_icon}</button>
+            <button class={"btn btn-xs btn-square btn-primary"} onclick={add_dir_onclick}>
+                <div class={"bg-primary-content h-5 w-5"} style={get_svg_bg_mask_style("/img/ui/folder-add.svg")}/>
+            </button>
+            <label class={"btn btn-xs btn-square btn-primary"} onclick={add_img_onclick}>
+                <div class={"bg-primary-content h-5 w-5"} style={get_svg_bg_mask_style("/img/ui/file-add.svg")}/>
                 <input {oninput} accept={"image/*"} type={"file"} class={"hidden"} />
             </label>
             </>
@@ -361,16 +380,23 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
             let onclick = Callback::from(move |_| {
                 state.set(State::Ok(None));
             });
-            html! {<><p>{e.to_string()}</p><div class={"btn btn-xs btn-secondary"} {onclick}>{"reload"}</div></>}
+            html! {
+                <>
+                <p>{e.to_string()}</p>
+                <div class={"btn btn-xs btn-secondary"} {onclick}>
+                    <div class={"bg-primary-content h-5 w-5"} style={get_svg_bg_mask_style("/img/ui/reload.svg")}/>
+                </div>
+                </>
+            }
         }
     };
     html! {
         <div class={"bg-base-200 border border-2 rounded-md p-2 shadow-lg"}>
             <div class={"lg:max-h-[18rem] flex flex-col"}>
-                <div class={"flex lg:flex-row flex-col gap-2 p-2 w-full lg:items-center"}>
+                <div class={"flex flex-wrap gap-2 p-2 w-full lg:items-center"}>
                     <div class={"flex border rounded-md px-2 italic bg-base-100 grow"}>
-                        {&*curr}
-                        <input id={DIR_INPUT_ID} enterkeyhint={"done"} placeholder={"enter dirname"} class={dir_input_class} onkeydown={add_dir_onkeydown}/>
+                        <p class={"word-break"}>{&*curr}</p>
+                        <input id={DIR_INPUT_ID} enterkeyhint={"done"} placeholder={locales_store.get(TK::EnterDirname)} class={dir_input_class} onkeydown={add_dir_onkeydown}/>
                     </div>
                     <div class={"flex flex-row gap-2 justify-between"}>
                         {buttons}
@@ -387,8 +413,8 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
                     </div>
                 </div>
                 <div class={"flex flex-row gap-2 w-full justify-end"}>
-                    <button class={select_class} onclick={select_onclick}>{"Select"}</button>
-                    <button class={"btn btn-sm btn-warning"} onclick={close_onclick}>{"Close"}</button>
+                    <button class={select_class} onclick={select_onclick}>{locales_store.get(TK::Ok)}</button>
+                    <button class={"btn btn-sm btn-warning"} onclick={close_onclick}>{locales_store.get(TK::Cancel)}</button>
                 </div>
             </div>
         </div>

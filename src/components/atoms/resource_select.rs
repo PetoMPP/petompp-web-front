@@ -5,6 +5,7 @@ use crate::{
         state::State,
     },
     data::{
+        locales::{store::LocalesStore, tk::TK},
         resources::{
             id::{ResId, ResourceId},
             store::LocalStore,
@@ -55,6 +56,7 @@ impl Mode {
 pub fn resource_select(props: &ResourceSelectProps) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (local_store, _) = use_store::<LocalStore>();
+    let (locales_store, _) = use_store::<LocalesStore>();
     let token = session_store.token.clone().unwrap_or_default();
     let data = use_state(|| State::Ok(None));
     let last_state = use_state(|| None);
@@ -130,14 +132,14 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
             }
         }
         State::Ok(None) | State::Loading => html! {
-            <Loading resource={"available resources".to_string()} />
+            <Loading resource={locales_store.get(TK::AvailableResources)} />
         },
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
                 return redirect;
             }
             html! {
-                <div class={"btn btn-warning pointer-events-none"}>{"Unable to load data!"}</div>
+                <div class={"btn btn-warning pointer-events-none"}>{locales_store.get(TK::ErrorOccured)}</div>
             }
         }
     };
@@ -150,7 +152,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     html! {
         <div class={"flex flex-row gap-4 w-full lg:w-auto"}>
             <div class={"dropdown grow lg:min-w-[12rem]"}>
-            <label class={"btn flex grow"} tabindex={"0"}>{props.resid.as_ref().map(|r| r.id().to_string()).unwrap_or("Select a resource!".to_string())}</label>
+            <label class={"btn flex grow"} tabindex={"0"}>{props.resid.as_ref().map(|r| r.id().to_string()).unwrap_or_else(|| locales_store.get(TK::SelectResource))}</label>
             <ul tabindex={"0"} class={"dropdown-content w-full flex flex-col mt-1 gap-1 z-10"}>
                 {list}
             </ul>
@@ -171,6 +173,7 @@ struct ResourceListProps {
 
 #[function_component(ResourceList)]
 fn resource_list(props: &ResourceListProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let mode: UseStateHandle<Mode> = use_state_eq(|| {
         (&props.currentresid)
             .as_ref()
@@ -216,7 +219,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     };
     let (text, page, elements) = match *mode {
         Mode::Resources => (
-            "Resources",
+            locales_store.get(TK::Resources),
             res_page,
             vec_into_elements(
                 props
@@ -229,7 +232,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
             ),
         ),
         Mode::Posts => (
-            "Blog posts",
+            locales_store.get(TK::BlogPosts),
             blog_page,
             vec_into_elements(
                 props
@@ -300,7 +303,12 @@ fn resource_list(props: &ResourceListProps) -> Html {
                 </div>
             }
         }
-        false => html! {{format!("New {}", text[..text.len() - 1].to_string())}},
+        false => html! {{
+            match *mode {
+                Mode::Resources => locales_store.get(TK::NewResource),
+                Mode::Posts => locales_store.get(TK::NewBlogPost),
+            }
+        }},
     };
     use_effect_with_deps(
         |new_element_input| {

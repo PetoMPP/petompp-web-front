@@ -7,7 +7,7 @@ use crate::{
         },
         organisms::blog::blog_image_select::BlogImageSelect,
     },
-    utils::{ext::Mergable, style::get_svg_bg_mask_style},
+    utils::{ext::Mergable, style::get_svg_bg_mask_style}, data::locales::{store::LocalesStore, tk::TK},
 };
 use petompp_web_models::models::{
     blog_data::BlogMetaData,
@@ -16,6 +16,7 @@ use petompp_web_models::models::{
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::{prelude::*, virtual_dom::VNode};
+use yewdux::prelude::*;
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct BlogMetaEditorProps {
@@ -25,6 +26,7 @@ pub struct BlogMetaEditorProps {
 
 #[function_component(BlogMetaEditor)]
 pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let title_onchange = onchange!(props, props.data.title);
     let tags_onchange = onchange!(props, props.data.tags);
     let image_onchange = onchange!(props, props.data.image);
@@ -33,25 +35,25 @@ pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
     html! {
         <>
             <TextInput
-                label={"Title"}
+                label={locales_store.get(TK::Title)}
                 itype={InputType::Text}
                 enabled={true}
                 value={props.data.as_ref().map(|d| d.title.clone()).unwrap_or_default()}
                 onchange={title_onchange}/>
             <BlogTagsEditor data={props.data.as_ref().map(|d| d.tags.clone())} ondatachanged={tags_onchange}/>
             <TextInput
-                label={"Created"}
+                label={locales_store.get(TK::Created)}
                 itype={InputType::Text}
                 enabled={false}
                 value={props.data.as_ref().map(|d| d.created.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
             <TextInput
-                label={"Updated"}
+                label={locales_store.get(TK::Updated)}
                 itype={InputType::Text}
                 enabled={false}
                 value={props.data.as_ref().map(|d| d.updated.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
             <ImageLinkEditor data={props.data.as_ref().map(|d| d.image.clone())} ondatachanged={image_onchange}/>
             <TextareaInput
-                label={"Summary"}
+                label={locales_store.get(TK::Summary)}
                 enabled={true}
                 value={props.data.as_ref().map(|d| d.summary.clone()).unwrap_or_default()}
                 onchange={summary_onchange}/>
@@ -67,6 +69,7 @@ pub struct BlogTagsEditorProps {
 
 #[function_component(BlogTagsEditor)]
 pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let tags = props.data.clone().unwrap_or_default().tags();
     let tag_nodes = {
         let ondatachanged = props.ondatachanged.clone();
@@ -109,10 +112,10 @@ pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
         })
     };
     html! {
-        <Label label={"Tags"}>
+        <Label label={locales_store.get(TK::Tags)}>
             <div class={"flex h-full gap-2 py-3 items-center input input-bordered shadow-md flex-wrap"}>
                 {tag_nodes}
-                <input class={"flex w-12 grow outline-none bg-transparent"} type={"text"} placeholder={"Add tag.."} {onkeydown} />
+                <input class={"flex w-12 grow outline-none bg-transparent"} type={"text"} placeholder={locales_store.get(TK::EnterTag)} {onkeydown} />
             </div>
         </Label>
     }
@@ -126,6 +129,7 @@ pub struct ImageLinkEditorProps {
 
 #[function_component(ImageLinkEditor)]
 pub fn image_link_editor(props: &ImageLinkEditorProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let focus_out = Callback::from(|_| {
         let element = web_sys::window()
             .unwrap()
@@ -142,7 +146,7 @@ pub fn image_link_editor(props: &ImageLinkEditorProps) -> Html {
             .merge(focus_out)
     };
     html! {
-        <Label label={"Image"} >
+        <Label label={locales_store.get(TK::Image)} >
             <BlogImageSelect data={props.data.clone()} {ondatachanged} />
         </Label>
     }

@@ -1,6 +1,10 @@
 use crate::{
     api::client::ApiClient,
-    data::{resources::id::ResId, session::SessionStore},
+    data::{
+        locales::{store::LocalesStore, tk::TK},
+        resources::id::ResId,
+        session::SessionStore,
+    },
     router::route::Route,
 };
 use petompp_web_models::models::country::Country;
@@ -17,6 +21,7 @@ pub struct DeleteButtonProps {
 #[function_component(DeleteButton)]
 pub fn delete_button(props: &DeleteButtonProps) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
+    let (locales_store, _) = use_store::<LocalesStore>();
     let navigator = use_navigator().unwrap();
     let resid = props.resid.clone();
     let lang = props.lang.clone();
@@ -50,6 +55,6 @@ pub fn delete_button(props: &DeleteButtonProps) -> Html {
         gloo::dialogs::alert(e.to_string().as_str());
     }
     html! {
-        <button {onclick} class={"flex btn btn-error"}>{"Delete"}</button>
+        <button {onclick} class={"flex btn btn-error"}>{locales_store.get(TK::Delete)}</button>
     }
 }

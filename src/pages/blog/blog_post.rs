@@ -89,7 +89,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
             )
         }
     };
-    let onclick = Callback::from(move |_| navigator.push(&Route::BlogRoot));
+    let onclick = Callback::from(move |_| navigator.push(&Route::Blog));
     html! {
         <PageBase>
             <EditButton resid={ResId::Blob(props.id.clone())} />
