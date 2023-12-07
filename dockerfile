@@ -11,8 +11,7 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install trunk --locked
 VOLUME /front
 WORKDIR /front
-RUN npm install -D tailwindcss-animated
-RUN npm install -D daisyui@latest
 COPY . .
+RUN npm install -D
 EXPOSE 8080
 CMD trunk serve --release --address 0.0.0.0

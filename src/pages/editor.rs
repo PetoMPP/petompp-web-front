@@ -381,9 +381,9 @@ pub fn editor() -> Html {
             </div>
             <div class={"flex flex-col gap-6"}>
                 {meta_editor}
-                <div id={"swap"} class={"flex flex-row gap-4"}>
+                <div class={"flex flex-row gap-4"}>
                     <p>{locales_store.get(TK::Editor)}</p>
-                    <input type={"checkbox"} class={"toggle bg-opacity-100"} {onchange}/>
+                    <input type={"checkbox"} class={"toggle bg-base-content hover:bg-base-content"} {onchange}/>
                     <p>{locales_store.get(TK::Preview)}</p>
                 </div>
                 {editor}
