@@ -17,10 +17,10 @@ module.exports = {
     themes: [
       {
         winter: {
-          ...require("daisyui/src/theming/themes")["[data-theme=winter]"],
+          ...require("daisyui/src/theming/themes")["winter"],
         },
         night: {
-          ...require("daisyui/src/theming/themes")["[data-theme=night]"],
+          ...require("daisyui/src/theming/themes")["night"],
           "primary": "#38bdf8"
         },
       }
