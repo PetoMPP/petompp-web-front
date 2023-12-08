@@ -29,14 +29,12 @@ pub fn login_redirect() -> Html {
         PATH_QUERY_NAME.to_string(),
         location.path().to_string(),
     )]);
-    if let Ok(query) = serde_urlencoded::from_str::<BTreeMap<String, String>>(
-        location.query_str()[1..].to_string().as_str(),
-    ) {
+    if let Ok(query) = location.query::<BTreeMap<String, String>>() {
         pairs.extend(query);
     };
     use_effect(move || navigator.push_with_query(&Route::Login, &pairs).unwrap());
 
-    html! {}
+    Html::default()
 }
 
 #[function_component(Login)]

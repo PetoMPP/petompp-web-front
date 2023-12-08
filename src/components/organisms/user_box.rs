@@ -1,5 +1,4 @@
 use crate::{
-    async_event,
     components::{
         atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
         organisms::menu::close_menu,
@@ -8,6 +7,7 @@ use crate::{
         locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
+    pages::login::LoginRedirect,
     router::{admin::AdminRoute, route::Route},
     utils::style::get_svg_bg_mask_style,
 };
@@ -39,11 +39,18 @@ pub fn user_box() -> Html {
 
 #[function_component(LoginButton)]
 fn login_button() -> Html {
-    let navigator = use_navigator().unwrap();
-    let onclick = Callback::from(move |_| {
-        close_menu();
-        navigator.push(&Route::Login);
-    });
+    let clicked = use_state(|| false);
+    let onclick = {
+        let clicked = clicked.clone();
+        Callback::from(move |_| {
+            clicked.set(true);
+            close_menu();
+        })
+    };
+    if *clicked {
+        clicked.set(false);
+        return html! { <LoginRedirect /> };
+    }
     html! {
         <div class={"btn btn-secondary p-1"} {onclick}>
             <a class={"aspect-square h-full bg-secondary-content"} style={get_svg_bg_mask_style("/img/ui/login.svg")}/>
@@ -56,11 +63,9 @@ fn logout_button() -> Html {
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (_, dispatch) = use_store::<ModalStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
-    let navigator = use_navigator().unwrap();
-    let onclick = async_event!(|session_dispatch, navigator| {
+    let onclick = Callback::from(move |_| {
         close_menu();
         session_dispatch.reduce(|_| SessionStore::default().into());
-        navigator.push(&Route::Login);
     });
     let onclick = show_modal_callback(
         ModalData {
