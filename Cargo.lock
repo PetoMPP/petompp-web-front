@@ -1214,7 +1214,6 @@ dependencies = [
  "reqwasm",
  "serde",
  "serde_json",
- "serde_urlencoded",
  "serde_yaml",
  "strum",
  "timeago",
