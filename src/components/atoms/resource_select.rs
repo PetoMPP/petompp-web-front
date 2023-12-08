@@ -206,6 +206,10 @@ fn resource_list(props: &ResourceListProps) -> Html {
         }
     };
     let vec_into_elements = |vec: Vec<(&ResId, bool)>| {
+        if vec.is_empty() {
+            return vec![vec![]];
+        }
+
         vec.clone()
             .chunks(3)
             .map(|x| {
