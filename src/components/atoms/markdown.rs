@@ -53,7 +53,7 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
     use_effect_with_deps(
         |(interactive, id, navigator)| {
             if interactive.is_some() {
-                make_links_clickable(navigator.clone(), id.as_str());
+                make_links_clickable(&navigator, id.as_str());
             }
         },
         (interactive, id.clone(), navigator.clone()),
@@ -144,11 +144,11 @@ pub fn edit_button(props: &EditButtonProps) -> Html {
     }
 
     html! {
-        <button class={"btn absolute top-5 right-5 btn-accent btn-xs btn-outline"} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
+        <button class={"btn absolute top-2 right-2 lg:top-4 lg:right-6 btn-accent btn-xs btn-outline z-10"} onclick={edit_onclick}>{locales_store.get(TK::Edit)}</button>
     }
 }
 
-fn make_links_clickable(navigator: Navigator, id: &str) {
+fn make_links_clickable(navigator: &Navigator, id: &str) {
     let element = get_display_element(id);
     let links = element.query_selector_all("a").unwrap();
     for i in 0..links.length() {
