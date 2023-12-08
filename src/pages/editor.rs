@@ -48,7 +48,8 @@ pub fn editor() -> Html {
     let (resid, lang) = location
         .query::<ResourceId>()
         .ok()
-        .and_then(|r| TryInto::<(ResId, Country)>::try_into(r).ok()).map(|(r, l)| (Some(r), Some(l)))
+        .and_then(|r| TryInto::<(ResId, Country)>::try_into(r).ok())
+        .map(|(r, l)| (Some(r), Some(l)))
         .unwrap_or_default();
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (local_store, local_dispatch) = use_store::<LocalStore>();
@@ -166,12 +167,7 @@ pub fn editor() -> Html {
                 }
             })
         },
-        (
-            resid.clone(),
-            lang,
-            state.clone(),
-            local_store.clone(),
-        ),
+        (resid.clone(), lang, state.clone(), local_store.clone()),
     );
     if let State::Err(e) = &*state {
         if let Err(redirect) = e.handle_failed_auth(session_dispatch.clone()) {
@@ -258,6 +254,7 @@ pub fn editor() -> Html {
                 let resid = resid.clone();
                 let lang = *lang;
                 let is_new = is_new.unwrap_or_default();
+                let state = state.clone();
                 Some(html! {
                     <button class={"btn btn-warning grow"} onclick={Callback::from(move |_| {
                         local_dispatch.reduce_mut(|store| {
@@ -266,6 +263,7 @@ pub fn editor() -> Html {
                         if is_new {
                             navigator.push(&Route::Editor);
                         }
+                        state.set(State::Ok(None));
                     })}>
                     {locales_store.get(TK::Discard)}
                     </button>
