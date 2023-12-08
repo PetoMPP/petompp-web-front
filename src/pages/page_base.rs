@@ -17,8 +17,9 @@ pub fn page_base(props: &PageBaseProps) -> Html {
         "grow",
         "mt-20",
         "w-full",
-        "p-4",
-        "lg:p-8",
+        "px-6",
+        "py-8",
+        "lg:px-8",
         "rounded-t-xl",
         "bg-base-100"
     );
