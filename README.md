@@ -90,12 +90,14 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
 The display element is styled with *prose* class from [Typography](https://tailwindcss.com/docs/typography-plugin) plugin for Tailwind, so it looks very nice for majority of MD features.
 Also some of the `<a>` elements contained have to be adjusted so local hrefs do not reload a page in `make_links_clickable` function.
 
-### Markdown editor
+### Resources editor
 
-Although hidden for non-admin users, there's an editor built into the app for the pages content.
-For the time being it is only accessible by navigating directly to it at https://petompp.net/editor/home-content/en.
+Although hidden for non-admin users, there's an editor built into the app for the pages content and blog posts.
+For the time being it is only accessible by navigating directly to it at https://petompp.net/editor.
 
-The editor features local changes saving and immidiate update of webpage resources.
+The editor features caching local changes saving and update of webpage resources and blog posts, including their metadata like tags, summary and splash image.
+In Blog meta editor user can select and upload images on Azure blob stroage with a nice UI.
+
 Frontend doesn't restrict unregistered users from trying to update the resources, but API shouldn't allow that.
 
 It also features a kind of decent UI that allows to quickly switch between resources and languages,
