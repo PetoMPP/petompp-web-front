@@ -210,7 +210,7 @@ fn get_buttons(buttons: &Buttons) -> Html {
             html! {
                 <>
                 <button class="btn btn-neutral" onclick={cancel_onclick}>{&cancel_button.text}</button>
-                <button class="btn btn-warning" onclick={risky_onclick}>{&risky_button.text}</button>
+                <button class="btn btn-error" onclick={risky_onclick}>{&risky_button.text}</button>
                 </>
             }
         }

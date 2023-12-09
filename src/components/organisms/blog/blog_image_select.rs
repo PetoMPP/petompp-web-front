@@ -1,15 +1,21 @@
-use std::path::Path;
-
 use crate::{
     api::client::{ApiClient, BlobClient},
-    components::{atoms::loading::Loading, state::State},
+    async_event,
+    components::{
+        atoms::{
+            loading::Loading,
+            modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+        },
+        state::State,
+    },
     data::{
         locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
         window::WindowStore,
     },
-    utils::style::get_svg_bg_mask_style,
+    utils::{ext::Mergable, style::get_svg_bg_mask_style},
 };
+use std::path::Path;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*};
@@ -79,6 +85,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
     let (window_store, _) = use_store::<WindowStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
+    let (_, modal_dispatch) = use_store::<ModalStore>();
     let curr = use_state(|| "/".to_string());
     let selected = use_state(|| None);
     let props = props.clone();
@@ -124,7 +131,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
                     browser.focus().unwrap();
                 }
             },
-            curr.clone(),
+            (curr.clone(), selected.clone()),
         )
     }
     let onselectedchanged = {
@@ -209,9 +216,7 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
         Callback::from(move |_| {
             let val = selected.as_ref().and_then(|s| match s {
                 BrowseItem::Dir(_) => None,
-                BrowseItem::File(name) => {
-                    Some(format!("{}{}", &curr.as_str()[1..], name))
-                }
+                BrowseItem::File(name) => Some(format!("{}{}", &curr.as_str()[1..], name)),
             });
             props.ondatachanged.emit(val)
         })
@@ -221,10 +226,15 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
         Some(BrowseItem::File(_)) => select_class.push("btn-success"),
         _ => select_class.push("btn-disabled"),
     };
-    let add_img_onclick = {
+    let enable_force_open = {
         let onforceopenchanged = props.onforceopenchanged.clone();
         Callback::from(move |_| onforceopenchanged.emit(true))
     };
+    let disable_force_open = {
+        let onforceopenchanged = props.onforceopenchanged.clone();
+        Callback::from(move |_| onforceopenchanged.emit(false))
+    };
+    let add_img_onclick = enable_force_open.clone();
     let mut dir_input_class = classes!("flex", "w-12", "grow", "outline-none", "bg-transparent");
     if !*dir_input_active {
         dir_input_class.push("hidden");
@@ -321,43 +331,57 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
         ),
         None => ("hidden", None),
     };
-
-    let delete_onclick = {
-        let selected = selected.clone();
-        let session_store = session_store.clone();
-        let curr = curr.clone();
-        let state = state.clone();
-        Callback::from(move |_| match (*selected).clone() {
-            Some(BrowseItem::Dir(path)) | Some(BrowseItem::File(path)) => {
-                let selected = selected.clone();
-                let token = session_store.token.clone().unwrap_or_default();
-                let curr = curr.clone();
-                let state = state.clone();
-                let go_up = match &*state {
-                    State::Ok(Some(paths)) => paths.len() == 1,
-                    _ => false,
-                };
-                spawn_local(async move {
-                    match ApiClient::delete_img(
-                        &token,
-                        (curr[1..].to_string() + path.as_str()).as_str(),
-                    )
-                    .await
-                    {
-                        Ok(_) => {
-                            if go_up {
-                                curr.set("/".to_string());
-                            }
-                            state.set(State::Ok(None));
-                        }
-                        Err(e) => state.set(State::Err(e)),
-                    }
-                    selected.set(None);
-                });
-            }
-            None => {}
-        })
+    let onforceopenchanged = &props.onforceopenchanged;
+    let go_up = match &*state {
+        State::Ok(Some(paths)) => paths.len() == 1,
+        _ => false,
     };
+    let delete_onclick = async_event!(|onforceopenchanged,
+                                       selected,
+                                       session_store,
+                                       curr,
+                                       state,
+                                       go_up| {
+        let path = match &*selected {
+            Some(BrowseItem::Dir(path) | BrowseItem::File(path)) => path,
+            _ => return,
+        };
+        let token = session_store.token.clone().unwrap_or_default();
+        match ApiClient::delete_img(&token, (curr[1..].to_string() + path.as_str()).as_str()).await
+        {
+            Ok(_) => {
+                if go_up {
+                    curr.set("/".to_string());
+                }
+                state.set(State::Ok(None));
+            }
+            Err(e) => state.set(State::Err(e)),
+        }
+        selected.set(None);
+        onforceopenchanged.emit(false);
+    });
+    let (title, message) = match &*selected {
+        Some(BrowseItem::Dir(_)) => (
+            locales_store.get(TK::DeleteDir),
+            locales_store.get(TK::DeleteDirQuestion),
+        ),
+        Some(BrowseItem::File(_)) => (
+            locales_store.get(TK::DeleteFile),
+            locales_store.get(TK::DeleteFileQuestion),
+        ),
+        None => (String::new(), String::new()),
+    };
+    let delete_onclick = enable_force_open.clone().merge(show_modal_callback(
+        ModalData {
+            title,
+            message,
+            buttons: Buttons::RiskyCancel(
+                ModalButton::new(locales_store.get(TK::Delete), Some(delete_onclick)),
+                ModalButton::new(locales_store.get(TK::Cancel), Some(disable_force_open)),
+            ),
+        },
+        modal_dispatch,
+    ));
     let buttons = match &*state {
         State::Ok(_) => html! {
             <>
