@@ -7,7 +7,9 @@ use crate::{
         },
         organisms::{
             blog::blog_meta_editor::BlogMetaEditor,
-            editor::atoms::{delete_button::DeleteButton, save_button::SaveButton},
+            editor::atoms::{
+                delete_button::DeleteButton, discard_button::DiscardButton, save_button::SaveButton,
+            },
             markdown_editor::MarkdownEditor,
             markdown_preview::MarkdownPreview,
         },
@@ -41,6 +43,14 @@ pub type EditorState = State<
     )>,
     RequestError,
 >;
+
+#[derive(Clone, PartialEq, Properties)]
+pub struct EditorProps {
+    pub state: EditorState,
+    pub onstatechanged: Callback<EditorState>,
+    pub resid: Option<ResId>,
+    pub lang: Option<Country>,
+}
 
 #[function_component(Editor)]
 pub fn editor() -> Html {
@@ -246,33 +256,6 @@ pub fn editor() -> Html {
             })
         }
     };
-    let clear_local = match &*state {
-        State::Ok(Some((is_new, (resid, lang), _))) => match local_store.get(resid, lang.key()) {
-            Some(_) => {
-                let navigator = navigator.clone();
-                let local_dispatch = local_dispatch.clone();
-                let resid = resid.clone();
-                let lang = *lang;
-                let is_new = is_new.unwrap_or_default();
-                let state = state.clone();
-                Some(html! {
-                    <button class={"btn btn-warning grow"} onclick={Callback::from(move |_| {
-                        local_dispatch.reduce_mut(|store| {
-                            store.remove(&resid, lang.key());
-                        });
-                        if is_new {
-                            navigator.push(&Route::Editor);
-                        }
-                        state.set(State::Ok(None));
-                    })}>
-                    {locales_store.get(TK::Discard)}
-                    </button>
-                })
-            }
-            _ => None,
-        },
-        _ => None,
-    };
     let onselectedchanged = {
         let navigator = navigator.clone();
         Callback::from(move |resource_id| {
@@ -356,12 +339,6 @@ pub fn editor() -> Html {
                 .unwrap();
         })
     });
-    let delete_button = match (is_new, &resid, &lang) {
-        (Some(false), Some(resid), Some(lang)) => Some(html! {
-            <DeleteButton resid={resid.clone()} lang={*lang}/>
-        }),
-        _ => None,
-    };
 
     html! {
         <PageBase>
@@ -372,9 +349,9 @@ pub fn editor() -> Html {
                 <div class={"flex flex-row flex-wrap gap-4 lg:w-auto w-full"}>
                     {go_back}
                     {reload}
-                    {clear_local}
-                    <SaveButton state={(*state).clone()} {onstatechanged} resid={resid.clone()} lang={lang}/>
-                    {delete_button}
+                    <DiscardButton state={(*state).clone()} onstatechanged={onstatechanged.clone()} resid={resid.clone()} lang={lang}/>
+                    <SaveButton state={(*state).clone()} onstatechanged={onstatechanged.clone()} resid={resid.clone()} lang={lang}/>
+                    <DeleteButton state={(*state).clone()} {onstatechanged} resid={resid.clone()} lang={lang}/>
                 </div>
             </div>
             <div class={"flex flex-col gap-6"}>

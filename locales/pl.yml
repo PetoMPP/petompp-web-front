@@ -38,6 +38,10 @@ SaveDraft: Zapisz kopię roboczą
 Resource: Zasób
 NewResource: Nowy zasób
 SelectResource: Wybierz zasób
+CreateResource: Utwórz zasób
+CreateResourceQuestion: Czy chcesz utworzyć zasób?
+DeleteResource: Usuń zasób
+DeleteResourceQuestion: Czy chcesz usunąć zasób?
 Resources: Zasoby
 AvailableResources: Dostępne zasoby
 Blog: Blog
@@ -50,8 +54,13 @@ Title: Tytuł
 Summary: Podsumowanie
 Tags: Tagi
 Image: Obraz
+DeleteDir: Usuń katalog
+DeleteDirQuestion: Czy chcesz usunąć katalog?
 EnterDirname: Wpisz nazwę katalogu..
+DeleteFile: Usuń plik
+DeleteFileQuestion: Czy chcesz usunąć plik?
 EnterTag: Wpisz tag..
+Create: Utwórz
 Created: Utworzono
 Creating: Tworzenie
 Updated: Zaktualizowano

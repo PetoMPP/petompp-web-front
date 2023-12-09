@@ -38,6 +38,10 @@ SaveDraft: Save Draft
 Resource: Resource
 NewResource: New Resource
 SelectResource: Select Resource
+CreateResource: Create Resource
+CreateResourceQuestion: Do you want to create a resource?
+DeleteResource: Delete Resource
+DeleteResourceQuestion: Do you want to delete a resource?
 Resources: Resources
 AvailableResources: Available Resources
 Blog: Blog
@@ -50,8 +54,13 @@ Title: Title
 Summary: Summary
 Tags: Tags
 Image: Image
+DeleteDir: Delete directory
+DeleteDirQuestion: Do you want to delete directory?
 EnterDirname: Enter directory name..
+DeleteFile: Delete file
+DeleteFileQuestion: Do you want to delete file?
 EnterTag: Enter tag..
+Create: Create
 Created: Created
 Creating: Creating
 Updated: Updated
