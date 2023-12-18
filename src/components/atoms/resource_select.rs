@@ -111,10 +111,9 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     let onselectedchanged_resid = {
         let props = props.clone();
         Callback::from(move |r| {
-            props.onselectedchanged.emit(ResourceId::from((
-                r,
-                props.lang.unwrap_or_default(),
-            )))
+            props
+                .onselectedchanged
+                .emit(ResourceId::from((r, props.lang.unwrap_or_default())))
         })
     };
     let onselectedchanged_lang = {
@@ -175,7 +174,8 @@ struct ResourceListProps {
 fn resource_list(props: &ResourceListProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let mode: UseStateHandle<Mode> = use_state_eq(|| {
-        props.currentresid
+        props
+            .currentresid
             .as_ref()
             .map(|r| r.into())
             .unwrap_or(Mode::Resources)
@@ -255,7 +255,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     };
     let dec_page = {
         let page = page.clone();
-        Callback::from(move |_| page.set((*page - 1).max(0)))
+        Callback::from(move |_| page.set(page.max(1) - 1))
     };
     const NEW_INPUT_ID: &str = "new-input-00";
     let (_, local_dispatch) = use_store::<LocalStore>();
