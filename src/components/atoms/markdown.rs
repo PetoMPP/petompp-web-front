@@ -132,10 +132,7 @@ pub fn edit_button(props: &EditButtonProps) -> Html {
     let (resid, lang) = (props.resid.clone(), locales_store.curr);
     let edit_onclick = Callback::from(move |_| {
         navigator
-            .push_with_query(
-                &Route::Editor,
-                &ResourceId::from((resid.clone(), lang)),
-            )
+            .push_with_query(&Route::Editor, &ResourceId::from((resid.clone(), lang)))
             .unwrap()
     });
 
@@ -156,13 +153,20 @@ fn make_links_clickable(navigator: &Navigator, id: &str) {
         let Some(href) = link.get_attribute("href") else {
             continue;
         };
-        if let Some(onclick) = Route::get_onclick_from_str(href.as_str(), navigator.clone()) {
-            link.add_event_listener_with_callback("click", onclick.as_ref().unchecked_ref())
-                .unwrap();
-            onclick.forget();
-        };
-        if href.starts_with("http") {
-            link.set_attribute("target", "_blank").unwrap();
+        match href {
+            href if href.starts_with("http") => link.set_attribute("target", "_blank").unwrap(),
+            href if href.starts_with("/") => {
+                if let Some(onclick) = Route::get_onclick_from_str(href.as_str(), navigator.clone())
+                {
+                    link.add_event_listener_with_callback(
+                        "click",
+                        onclick.as_ref().unchecked_ref(),
+                    )
+                    .unwrap();
+                    onclick.forget();
+                }
+            }
+            _ => {}
         }
     }
 }
