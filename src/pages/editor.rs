@@ -214,7 +214,7 @@ pub fn editor() -> Html {
         },
         State::Ok(None) => html! {
             <div class={"w-full flex rounded-lg bg-base-100"}>
-                <p class={"mx-auto py-4 text-xl font-semibold"}>{"Select something to edit!"}</p>
+                <p class={"mx-auto py-4 text-xl font-semibold"}>{locales_store.get(TK::NothingSelected)}</p>
             </div>
         },
         State::Loading => html! {
@@ -311,12 +311,14 @@ pub fn editor() -> Html {
             Some(true) => locales_store.get(TK::Creating),
             _ => locales_store.get(TK::Editing),
         };
-        let edit_text = match &resid {
-            Some(ResId::Blob(_)) => locales_store.get(TK::BlogPost),
-            Some(ResId::ResKey(_)) => locales_store.get(TK::Resource),
-            None => locales_store.get(TK::NothingSelected),
-        };
-        format!("{}: {}:", edit_pref, edit_text)
+        match match &resid {
+            Some(ResId::Blob(_)) => Some(locales_store.get(TK::BlogPost)),
+            Some(ResId::ResKey(_)) => Some(locales_store.get(TK::Resource)),
+            None => None,
+        } {
+            Some(e) => format!("{}: {}:", edit_pref, e),
+            None => format!("{}:", edit_pref),
+        }
     };
     let onchange = Callback::from(move |e: Event| {
         let element: HtmlInputElement = e.target_unchecked_into();
