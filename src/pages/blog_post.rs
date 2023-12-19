@@ -68,12 +68,15 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
         },
         (props.clone(), data.clone(), locales_store.clone()),
     );
-    let (meta, markdown) = match &*data {
+    let (meta, markdown, title) = match &*data {
         State::Ok(Some((m, md, _))) => (
             html! {<BlogPostMeta meta={m.clone()} />},
             Some(html! {<Markdown markdown={md.clone()} allowhtml={true} interactive={Some(())}/>}),
+            m.title.clone(),
         ),
-        State::Loading | State::Ok(None) => (html! { <Loading /> }, None),
+        State::Loading | State::Ok(None) => {
+            (html! { <Loading /> }, None, locales_store.get(TK::Loading))
+        }
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
                 return redirect;
@@ -86,12 +89,13 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
                     </>
                 },
                 None,
+                locales_store.get(TK::ErrorOccured),
             )
         }
     };
     let onclick = Callback::from(move |_| navigator.push(&Route::Blog));
     html! {
-        <PageBase>
+        <PageBase {title}>
             <EditButton resid={ResId::Blob(props.id.clone())} />
             <a class={"lg:mb-6 mb-4"} href={"javascript:void(0);"} {onclick}>{locales_store.get(TK::BackToBlogPosts)}</a>
             {meta}

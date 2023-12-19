@@ -9,7 +9,7 @@ use yewdux::prelude::*;
 pub fn projects() -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     html! {
-        <PageBase>
+        <PageBase title={locales_store.get(TK::Projects)}>
             <p class={"text-xl"}>{locales_store.get(TK::Projects)}</p>
             <p class={"text-sm"}>{locales_store.get(TK::ProjectsDescription)}</p>
         </PageBase>

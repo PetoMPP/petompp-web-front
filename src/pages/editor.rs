@@ -184,52 +184,74 @@ pub fn editor() -> Html {
             return redirect;
         }
     }
-    let editor = match &*state {
-        State::Ok(Some((_, (resid, lang), (value, meta)))) => match &*is_preview {
-            true => {
-                html! {<MarkdownPreview resid={resid.clone()} markdown={value.clone()} meta={meta.clone()} />}
-            }
-            false => {
-                let onchanged = {
-                    let local_dispatch = local_dispatch.clone();
-                    let resid = resid.clone();
-                    let lang = *lang;
-                    let meta = meta.clone();
-                    Callback::from(move |data: String| {
-                        local_dispatch.reduce_mut(|store| {
-                            if let Some((value, _)) = store.get_mut(&resid, lang.key()) {
-                                *value = data.clone();
-                            } else {
-                                store.insert(resid.clone(), lang.key(), data.clone(), meta.clone());
-                            }
-                        });
-                    })
-                };
-                html! {
-                <div class={"border border-2 border-base-300 rounded-2xl p-2 shadow-2xl"}>
-                    <MarkdownEditor state={value.clone()} {onchanged}/>
-                </div>
+    let (editor, title) = match &*state {
+        State::Ok(Some((is_new, (resid, lang), (value, meta)))) => {
+            let editor = match &*is_preview {
+                true => {
+                    html! {<MarkdownPreview resid={resid.clone()} markdown={value.clone()} meta={meta.clone()} />}
                 }
-            }
-        },
-        State::Ok(None) => html! {
-            <div class={"w-full flex rounded-lg bg-base-100"}>
-                <p class={"mx-auto py-4 text-xl font-semibold"}>{locales_store.get(TK::NothingSelected)}</p>
-            </div>
-        },
-        State::Loading => html! {
-            <Loading resource={locales_store.get(TK::PageContents)} />
-        },
+                false => {
+                    let onchanged = {
+                        let local_dispatch = local_dispatch.clone();
+                        let resid = resid.clone();
+                        let lang = *lang;
+                        let meta = meta.clone();
+                        Callback::from(move |data: String| {
+                            local_dispatch.reduce_mut(|store| {
+                                if let Some((value, _)) = store.get_mut(&resid, lang.key()) {
+                                    *value = data.clone();
+                                } else {
+                                    store.insert(
+                                        resid.clone(),
+                                        lang.key(),
+                                        data.clone(),
+                                        meta.clone(),
+                                    );
+                                }
+                            });
+                        })
+                    };
+                    html! {
+                    <div class={"border border-2 border-base-300 rounded-2xl p-2 shadow-2xl"}>
+                        <MarkdownEditor state={value.clone()} {onchanged}/>
+                    </div>
+                    }
+                }
+            };
+            let action = match is_new.unwrap_or_default() {
+                true => locales_store.get(TK::Creating),
+                false => locales_store.get(TK::Editing),
+            };
+            (editor, format!("{}: {}", action, resid.id()))
+        }
+        State::Ok(None) => {
+            let text = locales_store.get(TK::NothingSelected);
+            let editor = html! {
+                <div class={"w-full flex rounded-lg bg-base-100"}>
+                    <p class={"mx-auto py-4 text-xl font-semibold"}>{&text}</p>
+                </div>
+            };
+            (editor, text)
+        }
+        State::Loading => (
+            html! {
+                <Loading resource={locales_store.get(TK::PageContents)} />
+            },
+            locales_store.get(TK::Loading),
+        ),
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
                 return redirect;
             }
-            html! {
-                <div class={"w-full flex flex-col gap-4 rounded-lg bg-error"}>
-                    <p class={"mx-auto py-4 text-error-content text-xl font-semibold"}>{locales_store.get(TK::ErrorOccured)}</p>
-                    <p class={"mx-auto py-4 text-error-content"}>{e.to_string()}</p>
-                </div>
-            }
+            (
+                html! {
+                    <div class={"w-full flex flex-col gap-4 rounded-lg bg-error"}>
+                        <p class={"mx-auto py-4 text-error-content text-xl font-semibold"}>{locales_store.get(TK::ErrorOccured)}</p>
+                        <p class={"mx-auto py-4 text-error-content"}>{e.to_string()}</p>
+                    </div>
+                },
+                String::new(),
+            )
         }
     };
     let reload = match &*state {
@@ -343,7 +365,7 @@ pub fn editor() -> Html {
     });
 
     html! {
-        <PageBase>
+        <PageBase {title}>
             <Editable resid={ResId::ResKey("editor-intro".to_string())}/>
             <div class={"flex flex-col lg:flex-row gap-4 pb-6 items-center"}>
                 <h2 class={"flex font-semibold text-2xl"}>{edit_text}</h2>
