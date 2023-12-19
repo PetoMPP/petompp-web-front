@@ -93,7 +93,7 @@ pub fn register() -> Html {
         _ => None,
     };
     html! {
-        <PageBase>
+        <PageBase title={locales_store.get(TK::Register)}>
         <form class={"form-control mx-auto mt-8 lg:mt-16 w-5/6 lg:w-3/4 xl:w-1/2"} {onsubmit}>
             <label class={"label"}>
                 <span class={"label-text text-lg lg:text-2xl"}>{locales_store.get(TK::Register)}</span>
