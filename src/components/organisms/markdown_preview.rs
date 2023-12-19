@@ -43,7 +43,7 @@ pub fn markdown_preview(props: &MarkdownPreviewProps) -> Html {
             </div>
             <div class={"border-t border-base-300"}>
                 <AppBase preview={true}>
-                <PageBase animatenone={Some(())}>
+                <PageBase mockup={Some(())} title={String::new()}>
                     {meta}
                     <Markdown markdown={props.markdown.clone()} allowhtml={true}/>
                 </PageBase>
