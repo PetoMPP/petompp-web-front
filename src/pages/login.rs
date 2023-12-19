@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use crate::{
     api::{self, client::ApiClient},
     async_event,
@@ -15,6 +13,7 @@ use crate::{
     router::route::Route,
 };
 use petompp_web_models::models::credentials::Credentials;
+use std::collections::BTreeMap;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::use_store;
@@ -97,7 +96,7 @@ pub fn login() -> Html {
         )
     };
     html! {
-        <PageBase>
+        <PageBase title={locales_store.get(TK::Login)}>
         <form class={"form-control mx-auto mt-8 lg:mt-16 w-5/6 lg:w-3/4 xl:w-1/2"} {onsubmit}>
             <label class={"label"}>
                 <span class={"label-text text-lg lg:text-2xl"}>{locales_store.get(TK::Login)}</span>

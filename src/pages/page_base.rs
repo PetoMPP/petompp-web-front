@@ -1,11 +1,12 @@
-use crate::components::atoms::markdown::{Editable, EditableProps};
+use crate::{components::atoms::markdown::Editable, data::resources::id::ResId};
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct PageBaseProps {
     #[prop_or_default]
     pub children: Children,
-    pub animatenone: Option<()>,
+    pub title: String,
+    pub mockup: Option<()>,
 }
 
 #[function_component(PageBase)]
@@ -23,11 +24,30 @@ pub fn page_base(props: &PageBaseProps) -> Html {
         "rounded-t-xl",
         "bg-base-100"
     );
-    if props.animatenone.is_none() {
+    if props.mockup.is_none() {
         class.push("animate-fade");
         class.push("animate-duration-500");
         class.push("animate-ease-in-out");
     }
+    let mockup = props.mockup;
+
+    use_effect_with_deps(
+        move |title| {
+            if mockup.is_some() {
+                return;
+            }
+            let title = match title.is_empty() {
+                true => "PetoMPP.NET".to_string(),
+                false => format!("{} - PetoMPP.NET", title),
+            };
+            gloo::console::info!(format!("Setting title to {}", &title));
+            web_sys::window()
+                .and_then(|w| w.document())
+                .unwrap()
+                .set_title(&title)
+        },
+        props.title.clone(),
+    );
     html! {
         <div {class}>
             <div class={"lg:w-5/6 w-full mx-auto"}>
@@ -37,10 +57,19 @@ pub fn page_base(props: &PageBaseProps) -> Html {
     }
 }
 
+#[derive(PartialEq, Properties)]
+pub struct EditablePageBaseProps {
+    #[prop_or_default]
+    pub children: Children,
+    pub title: String,
+    pub animatenone: Option<()>,
+    pub resid: ResId,
+}
+
 #[function_component(EditablePage)]
-pub fn editable_page_base(props: &EditableProps) -> Html {
+pub fn editable_page_base(props: &EditablePageBaseProps) -> Html {
     html! {
-        <PageBase>
+        <PageBase title={props.title.clone()}>
             <Editable resid={props.resid.clone()}/ >
         </PageBase>
     }
