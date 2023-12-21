@@ -43,8 +43,8 @@ pub fn blog_image_select(props: &BlogImageSelectProps) -> Html {
         "input",
         "input-bordered",
         "shadow-md",
-        "flex",
-        "flex-row",
+        "grid",
+        "grid-cols-auto-2",
         "items-center",
         "justify-between",
         "px-0"
@@ -63,7 +63,7 @@ pub fn blog_image_select(props: &BlogImageSelectProps) -> Html {
             </div>
             <div class={"w-full"}>
                 <div id={ID} tabindex={"0"} class={dropdown_class}>
-                    <div class={"pl-2"}>{props.data.clone().unwrap_or_default()}</div>
+                    <div class={"pl-2 truncate"}>{props.data.clone().unwrap_or_default()}</div>
                     <label class={"rounded-l-none btn btn-primary no-animation"} tabindex={"0"}>{locales_store.get(TK::Edit)}</label>
                     <div tabindex={"0"} class={"dropdown-content w-full flex flex-col mb-4 gap-1 z-10"}>
                         <ImageBrowserDialog ondatachanged={props.ondatachanged.clone()} {onforceopenchanged} />
