@@ -4,7 +4,7 @@ use crate::{
         atoms::modal::{ErrorModal, Modal},
         organisms::header::Header,
     },
-    data::{locales::store::LocalesStore, window::WindowStore},
+    data::locales::store::LocalesStore,
     router::route::Route,
 };
 use yew::{platform::spawn_local, prelude::*};
@@ -14,6 +14,7 @@ use yewdux::prelude::*;
 mod api;
 mod components;
 mod data;
+mod hooks;
 mod pages;
 mod router;
 mod utils;
@@ -49,7 +50,6 @@ pub fn app_base(props: &AppProps) -> Html {
 pub fn app() -> Html {
     let error_state = use_state(|| None);
     let (locale_store, locale_dispatch) = use_store::<LocalesStore>();
-    let (_, window_dispatch) = use_store::<WindowStore>();
     if !locale_store.is_loaded(locale_store.curr) || error_state.is_some() {
         let locale_dispatch = locale_dispatch.clone();
         spawn_local(async move {
@@ -66,7 +66,6 @@ pub fn app() -> Html {
     _ = use_memo(
         |_| {
             LocalesStore::add_lang_change_event_listener(locale_dispatch);
-            WindowStore::add_focus_change_event_listener(window_dispatch);
         },
         (),
     );
