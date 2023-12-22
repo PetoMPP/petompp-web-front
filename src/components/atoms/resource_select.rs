@@ -173,6 +173,7 @@ struct ResourceListProps {
 #[function_component(ResourceList)]
 fn resource_list(props: &ResourceListProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
+    let (session_store, session_dispatch) = use_store::<SessionStore>();
     let mode: UseStateHandle<Mode> = use_state_eq(|| {
         props
             .currentresid
@@ -259,14 +260,15 @@ fn resource_list(props: &ResourceListProps) -> Html {
     };
     const NEW_INPUT_ID: &str = "new-input-00";
     let (_, local_dispatch) = use_store::<LocalStore>();
-    let new_element_input = use_state(|| false);
-    let new_element_content = match *new_element_input {
-        true => {
+    let new_element_input = use_state(|| State::Ok(false));
+    let new_element_content = match &*new_element_input {
+        State::Ok(true) => {
             let onkeydown = {
                 let new_element_input = new_element_input.clone();
                 let onselectedchanged = props.onselectedchanged.clone();
                 let mode = mode.clone();
                 let currlang = props.currentlang;
+                let token = session_store.token.clone();
                 Callback::from(move |e: KeyboardEvent| {
                     if e.key() != "Enter" {
                         return;
@@ -276,27 +278,53 @@ fn resource_list(props: &ResourceListProps) -> Html {
                     if id.is_empty() {
                         return;
                     }
-                    let (resid, meta) = match *mode {
-                        Mode::Resources => (ResId::ResKey(id), None),
-                        Mode::Posts => (ResId::Blob(id), Some(BlogMetaData::default())),
-                    };
-                    local_dispatch.reduce_mut(|s| {
-                        s.insert(
-                            resid.clone(),
-                            currlang.unwrap_or_default().key(),
-                            String::new(),
-                            meta.clone(),
-                        );
+                    let new_element_input = new_element_input.clone();
+                    let token = token.clone();
+                    let mode = mode.clone();
+                    let local_dispatch = local_dispatch.clone();
+                    let onselectedchanged = onselectedchanged.clone();
+                    new_element_input.set(State::Loading);
+                    spawn_local(async move {
+                        match ApiClient::get_res_ids(token.unwrap_or_default().as_str()).await {
+                            Ok((res, pos)) => {
+                                let (resid, meta, exists) = match *mode {
+                                    Mode::Resources => {
+                                        let resid = ResId::ResKey(id);
+                                        let contains = res.contains(&resid);
+                                        (resid, None, contains)
+                                    }
+                                    Mode::Posts => {
+                                        let resid = ResId::ResKey(id);
+                                        let contains = pos.contains(&resid);
+                                        (resid, Some(BlogMetaData::default()), contains)
+                                    }
+                                };
+                                if !exists {
+                                    local_dispatch.reduce_mut(|s| {
+                                        if s.exists(&resid) {
+                                            return;
+                                        }
+                                        s.insert(
+                                            resid.clone(),
+                                            currlang.unwrap_or_default().key(),
+                                            String::new(),
+                                            meta.clone(),
+                                        );
+                                    });
+                                }
+                                onselectedchanged.emit(resid);
+                                new_element_input.set(State::Ok(false));
+                            }
+                            Err(e) => new_element_input.set(State::Err(e)),
+                        }
                     });
-                    onselectedchanged.emit(resid);
-                    new_element_input.set(false);
                 })
             };
             let onclick = {
                 let new_element_input = new_element_input.clone();
                 Callback::from(move |e: MouseEvent| {
                     e.set_cancel_bubble(true);
-                    new_element_input.set(false);
+                    new_element_input.set(State::Ok(false));
                 })
             };
             html! {
@@ -306,16 +334,27 @@ fn resource_list(props: &ResourceListProps) -> Html {
                 </div>
             }
         }
-        false => html! {{
+        State::Ok(false) => html! {{
             match *mode {
                 Mode::Resources => locales_store.get(TK::NewResource),
                 Mode::Posts => locales_store.get(TK::NewBlogPost),
             }
         }},
+        State::Loading => html! {
+            <Loading/>
+        },
+        State::Err(e) => {
+            if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
+                return redirect;
+            }
+            html! {
+                <div class={"btn btn-warning pointer-events-none"}>{locales_store.get(TK::ErrorOccured)}</div>
+            }
+        }
     };
     use_effect_with_deps(
         |new_element_input| {
-            if !**new_element_input {
+            if &**new_element_input != &State::Ok(true) {
                 return;
             }
             if let Some(input) = web_sys::window()
@@ -330,10 +369,10 @@ fn resource_list(props: &ResourceListProps) -> Html {
     );
     let new_element_onclick = {
         let new_element_input = new_element_input.clone();
-        Callback::from(move |_| new_element_input.set(true))
+        Callback::from(move |_| new_element_input.set(State::Ok(true)))
     };
     let mut new_element_class = classes!("btn", "btn-secondary", "flex");
-    if *new_element_input {
+    if *new_element_input == State::Ok(true) {
         new_element_class.push("no-animation");
     }
     let elements = elements[*page].clone().into_iter();
