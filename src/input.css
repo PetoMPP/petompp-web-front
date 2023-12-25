@@ -10,4 +10,12 @@
   .grid-cols-auto-2 {
     grid-template-columns: auto auto;
   }
+
+  .aspect-1-1 {
+    aspect-ratio: 1 / 1;
+  }
+
+  .divider-base-content {
+    @apply before:bg-base-content after:bg-base-content;
+  }
 }
