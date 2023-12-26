@@ -1,5 +1,5 @@
 use crate::{
-    api::client::ApiClient,
+    api::client::{ApiClient, RequestError},
     async_event,
     components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
@@ -21,12 +21,21 @@ pub fn delete_button(props: &EditorProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let (_, modal_dispatch) = use_store::<ModalStore>();
     let navigator = use_navigator().unwrap();
-    let err = use_state(|| None);
+    let err = use_state(|| Option::<RequestError>::None);
+    if let Some(e) = &*err {
+        if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
+            return redirect;
+        }
+        gloo::dialogs::alert(e.to_string().as_str());
+    }
     let (Some(resid), Some(lang)) = (&props.resid, &props.lang) else {
         return html! {};
     };
-    if let EditorState::Loading = &props.state {
-        return html! {};
+    match &props.state {
+        EditorState::Loading
+        | EditorState::Ok(None)
+        | EditorState::Ok(Some((Some(true), _, _))) => return Html::default(),
+        _ => {}
     }
     let onstatechange = &props.onstatechanged;
     let token = session_store.token.clone().unwrap_or_default();
@@ -54,12 +63,6 @@ pub fn delete_button(props: &EditorProps) -> Html {
         },
         modal_dispatch.clone(),
     );
-    if let Some(e) = &*err {
-        if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
-            return redirect;
-        }
-        gloo::dialogs::alert(e.to_string().as_str());
-    }
     html! {
         <button {onclick} class={"flex btn btn-error"}>{locales_store.get(TK::Delete)}</button>
     }
