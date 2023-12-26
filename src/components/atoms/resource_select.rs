@@ -199,8 +199,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
             class.push("btn-primary");
         };
         if cache_only {
-            class.push("btn-outline");
-            class.push("italic");
+            class.push("btn-outline italic bg-base-100");
         };
         html! {
             <li onclick={get_btn_onclick(r)} {class}>{id}</li>
@@ -294,7 +293,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
                                         (resid, None, contains)
                                     }
                                     Mode::Posts => {
-                                        let resid = ResId::ResKey(id);
+                                        let resid = ResId::Blob(id);
                                         let contains = pos.contains(&resid);
                                         (resid, Some(BlogMetaData::default()), contains)
                                     }
