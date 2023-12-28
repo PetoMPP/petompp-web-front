@@ -8,8 +8,11 @@ use petompp_web_models::{
         blog_data::{BlogData, BlogMetaData},
         country::Country,
         credentials::Credentials,
+        password_requirements::PasswordRequirements,
         resource_data::ResourceData,
         user::UserData,
+        user_settings_dto::UserSettingsDto,
+        username_requirements::UsernameRequirements,
     },
 };
 use reqwasm::http::*;
@@ -369,6 +372,21 @@ impl ApiClient {
                 posts
             },
         ))
+    }
+
+    pub async fn get_user_settings(
+    ) -> Result<(UsernameRequirements, PasswordRequirements), RequestError> {
+        Self::send_json(
+            Method::GET,
+            "api/v1/settings/users",
+            None,
+            Option::<&String>::None,
+        )
+        .await
+        .map(|dto: UserSettingsDto| {
+            dto.try_into()
+                .map_err(|_: ()| RequestError::Parse("Invalid data format".to_string()))
+        })?
     }
 }
 
