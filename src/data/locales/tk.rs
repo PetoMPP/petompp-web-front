@@ -1,4 +1,3 @@
-use petompp_web_models::models::password_requirements::PasswordRequirements;
 use strum::EnumIter;
 
 #[allow(non_camel_case_types)]
@@ -72,6 +71,14 @@ pub enum TK {
     Updated,
     NothingSelected,
     ErrorOccured,
+    Username_InvalidLength(i32, i32),
+    Username_OnlyAlphanumericOrSelectedChars(String),
+    Username_NameTaken(String),
+    Password_MinLength(i32),
+    Password_ContainsNumber,
+    Password_ContainsUppercase,
+    Password_ContainsLowercase,
+    Password_ContainsSpecial,
     E_Auth_MissingClaim(String),
     E_Auth_InvalidFormat(String),
     E_Auth_TokenExpiredS(i32),
@@ -82,14 +89,6 @@ pub enum TK {
     E_UserNotFound(String),
     E_InvalidCredentials,
     E_UserNotConfirmed(String),
-    E_Validation_Username_InvalidLength(i32, i32),
-    E_Validation_Username_InvalidCharacters(String),
-    E_Validation_Password(PasswordRequirements),
-    E_Validation_PasswordRequirement(i32, i32, String),
-    E_Validation_PasswordRequirement_ContainsLowercase,
-    E_Validation_PasswordRequirement_ContainsUppercase,
-    E_Validation_PasswordRequirement_ContainsNumber,
-    E_Validation_PasswordRequirement_ContainsSpecialCharacter,
     E_Validation_Country,
     E_Validation_Query_InvalidColumn(String),
     E_Validation_ResourceData_KeyMismatch(String, String),
