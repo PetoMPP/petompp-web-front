@@ -39,9 +39,12 @@ pub fn text_input(props: &TextInputProps) -> Html {
         |_| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
         (),
     );
-    let class = match &props.error {
-        Some(_) => "input input-bordered shadow-md input-error text-error",
-        None => "input input-bordered shadow-md",
+    let (class, tooltip_class) = match &props.error {
+        Some(_) => (
+            "input input-bordered shadow-md input-error text-error w-full",
+            "whitespace-pre-line before:lg:max-w-[90%] before:max-w-[90vw] absolute left-0 right-0 top-[-0.25rem] tooltip group-focus-within:tooltip-open tooltip-top tooltip-error opacity-90 w-full",
+        ),
+        None => ("input input-bordered shadow-md w-full", "w-full"),
     };
     let oninput = props.onchange.clone().map(move |cb| {
         Callback::from(move |e: InputEvent| {
@@ -71,10 +74,13 @@ pub fn text_input(props: &TextInputProps) -> Html {
         );
     }
     html! {
-        <Label label={props.label.clone()} error={props.error.clone()}>
-            <input id={(*id).clone()} {class} type={props.itype.as_str()} disabled={!props.enabled}
-                placeholder={props.placeholder.clone()} autocomplete={props.autocomplete.clone()}
-                {oninput}/>
+        <Label label={props.label.clone()} error={props.error.is_some()}>
+            <div class={"group relative"}>
+                <div class={tooltip_class} data-tip={props.error.clone()} />
+                <input id={(*id).clone()} {class} type={props.itype.as_str()} disabled={!props.enabled}
+                    placeholder={props.placeholder.clone()} autocomplete={props.autocomplete.clone()}
+                    {oninput}/>
+            </div>
         </Label>
     }
 }
@@ -86,7 +92,7 @@ pub struct TextareaInputProps {
     pub value: Option<String>,
     pub autocomplete: Option<String>,
     pub onchange: Option<Callback<String>>,
-    pub error: Option<String>,
+    pub error: bool,
 }
 
 #[function_component(TextareaInput)]
@@ -107,11 +113,11 @@ pub fn textarea_input(props: &TextareaInputProps) -> Html {
         },
         id.clone(),
     );
-    let class = match &props.error {
-        Some(_) => {
+    let class = match props.error {
+        true => {
             "input input-bordered py-3 overflow-hidden resize-none shadow-md input-error text-error"
         }
-        None => "input input-bordered py-3 overflow-hidden resize-none shadow-md",
+        false => "input input-bordered py-3 overflow-hidden resize-none shadow-md",
     };
     let oninput = {
         let onchange = props.onchange.clone();
@@ -140,7 +146,7 @@ pub fn textarea_input(props: &TextareaInputProps) -> Html {
         );
     }
     html! {
-        <Label label={props.label.clone()} error={props.error.clone()}>
+        <Label label={props.label.clone()} error={props.error}>
             <textarea id={(*id).clone()} {class} disabled={!props.enabled}
                 autocomplete={props.autocomplete.clone()} {oninput}/>
         </Label>
