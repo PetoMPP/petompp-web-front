@@ -1,4 +1,4 @@
-use super::{localizable::Localizable, tk::TK};
+use super::tk::TK;
 use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -44,6 +44,8 @@ impl LocalesStore {
         match key {
             TK::ActivateUserQuestion(s)
             | TK::DeleteUserQuestion(s)
+            | TK::Username_OnlyAlphanumericOrSelectedChars(s)
+            | TK::Username_NameTaken(s)
             | TK::E_Auth_MissingClaim(s)
             | TK::E_Auth_InvalidFormat(s)
             | TK::E_Auth_JwtError(s)
@@ -52,20 +54,16 @@ impl LocalesStore {
             | TK::E_UserNameTaken(s)
             | TK::E_UserNotFound(s)
             | TK::E_UserNotConfirmed(s)
-            | TK::E_Validation_Username_InvalidCharacters(s)
             | TK::E_Validation_Query_InvalidColumn(s) => val.replace("%{0}", &s),
-            TK::E_Auth_TokenExpiredS(s) => val.replace("%{0}", &s.to_string()),
-            TK::E_Validation_Username_InvalidLength(min, max) => val
+            TK::Password_MinLength(s) | TK::E_Auth_TokenExpiredS(s) => {
+                val.replace("%{0}", &s.to_string())
+            }
+            TK::Username_InvalidLength(min, max) => val
                 .replace("%{0}", &min.to_string())
                 .replace("%{1}", &max.to_string()),
-            TK::E_Validation_PasswordRequirement(min, max, s) => val
-                .replace("%{0}", &min.to_string())
-                .replace("%{1}", &max.to_string())
-                .replace("%{2}", &s),
             TK::E_Validation_ResourceData_KeyMismatch(exp, act) => {
                 val.replace("%{0}", &exp).replace("%{1}", &act)
             }
-            TK::E_Validation_Password(pr) => pr.localize(self),
             _ => val,
         }
     }
