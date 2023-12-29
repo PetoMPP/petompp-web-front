@@ -14,6 +14,6 @@ pub fn admin_panel() -> Html {
         return html! {<NotFound />};
     };
     html! {
-        <EditablePage resid={ResId::ResKey(RES_KEY.to_string())}/ >
+        <EditablePage title={"Admin panel".to_string()} resid={ResId::ResKey(RES_KEY.to_string())}/ >
     }
 }

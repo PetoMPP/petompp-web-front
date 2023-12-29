@@ -33,11 +33,11 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
     };
 
     html! {
-    <div class={"card card-side bg-base-200 z-10 cursor-pointer"} {onclick}>
-        <div class={"card-body pt-4"}>
+    <div class={"card card-side bg-base-200 cursor-pointer"} {onclick}>
+        <div class={"card-body pt-4 z-10"}>
             <div class={"flex flex-col gap-4 lg:gap-2"}>
                 <div class={"flex flex-row justify-start"}>
-                    <div class={"flex flex-row gap-2"}>
+                    <div class={"flex flex-row gap-2 flex-wrap"}>
                     {for tags}
                     </div>
                 </div>

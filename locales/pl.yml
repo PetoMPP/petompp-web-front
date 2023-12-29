@@ -66,6 +66,14 @@ Creating: Tworzenie
 Updated: Zaktualizowano
 NothingSelected: Nic nie wybrano
 ErrorOccured: Wystąpił błąd!
+Username_InvalidLength: Nazwa użytkownika musi mieć od %{0} do %{1} znaków.
+Username_OnlyAlphanumericOrSelectedChars: Nazwa użytkownika może zawierać tylko litery, cyfry oraz wybrane znaki specjalne (%{0}).
+Username_NameTaken: Nazwa użytkownika %{0} jest już zajęta.
+Password_MinLength: Hasło musi mieć co najmniej %{0} znaków.
+Password_ContainsNumber: Hasło musi zawierać co najmniej 1 cyfrę.
+Password_ContainsUppercase: Hasło musi zawierać co najmniej 1 dużą literę.
+Password_ContainsLowercase: Hasło musi zawierać co najmniej 1 małą literę.
+Password_ContainsSpecial: Hasło musi zawierać co najmniej 1 znak specjalny.
 # Errors
 E_Auth_MissingClaim: Uwierzytelnianie nie powiodło się. Brakujące roszczenie "%{0}".
 E_Auth_InvalidFormat: Uwierzytelnianie nie powiodło się. Nieprawidłowy format roszczenia "%{0}".
@@ -77,14 +85,6 @@ E_UserNameTaken: "Nazwa użytkownika %{0} jest już zajęta."
 E_UserNotFound: "Nie znaleziono użytkownika %{0}."
 E_InvalidCredentials: "Nieprawidłowe dane logowania."
 E_UserNotConfirmed: "Użytkownik %{0} nie jest potwierdzony."
-E_Validation_Username_InvalidLength: "Nazwa użytkownika musi mieć od %{0} do %{1} znaków."
-E_Validation_Username_InvalidCharacters: "Nazwa użytkownika może zawierać tylko litery, cyfry oraz wybrane znaki specjalne (%{0})."
-E_Validation_Password: "Hasło jest nieprawidłowe."
-E_Validation_PasswordRequirement: "Hasło musi mieć co najmniej %{0} znaków i spełniać co najmniej %{1} z następujących wymagań: %{2}."
-E_Validation_PasswordRequirement_ContainsLowercase: "co najmniej 1 małą literę"
-E_Validation_PasswordRequirement_ContainsUppercase: "co najmniej 1 dużą literę"
-E_Validation_PasswordRequirement_ContainsNumber: "co najmniej 1 cyfrę"
-E_Validation_PasswordRequirement_ContainsSpecialCharacter: "co najmniej 1 znak specjalny"
 E_Validation_Country: "Państwo jest nieprawidłowe."
 E_Validation_Query_InvalidColumn: "Nieprawidłowa kolumna %{0}."
 E_Validation_ResourceData_KeyMismatch: "Niezgodność klucza. Oczekiwano %{0}, otrzymano %{1}."

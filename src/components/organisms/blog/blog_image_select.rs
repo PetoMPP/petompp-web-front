@@ -11,13 +11,13 @@ use crate::{
     data::{
         locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
-        window::WindowStore,
     },
+    hooks::event::use_event,
     utils::{ext::Mergable, style::get_svg_bg_mask_style},
 };
 use std::path::Path;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement, HtmlInputElement};
+use web_sys::{HtmlElement, HtmlInputElement, Node};
 use yew::{platform::spawn_local, prelude::*};
 use yewdux::prelude::*;
 
@@ -43,8 +43,8 @@ pub fn blog_image_select(props: &BlogImageSelectProps) -> Html {
         "input",
         "input-bordered",
         "shadow-md",
-        "flex",
-        "flex-row",
+        "grid",
+        "grid-cols-auto-2",
         "items-center",
         "justify-between",
         "px-0"
@@ -63,7 +63,7 @@ pub fn blog_image_select(props: &BlogImageSelectProps) -> Html {
             </div>
             <div class={"w-full"}>
                 <div id={ID} tabindex={"0"} class={dropdown_class}>
-                    <div class={"pl-2"}>{props.data.clone().unwrap_or_default()}</div>
+                    <div class={"pl-2 truncate"}>{props.data.clone().unwrap_or_default()}</div>
                     <label class={"rounded-l-none btn btn-primary no-animation"} tabindex={"0"}>{locales_store.get(TK::Edit)}</label>
                     <div tabindex={"0"} class={"dropdown-content w-full flex flex-col mb-4 gap-1 z-10"}>
                         <ImageBrowserDialog ondatachanged={props.ondatachanged.clone()} {onforceopenchanged} />
@@ -82,7 +82,6 @@ pub struct ImageBrowserDialogProps {
 
 #[function_component(ImageBrowserDialog)]
 pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
-    let (window_store, _) = use_store::<WindowStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let (_, modal_dispatch) = use_store::<ModalStore>();
@@ -91,6 +90,23 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
     let props = props.clone();
     let state = use_state(|| State::Ok(None));
     let dir_input_active = use_state(|| false);
+    let onforceopenchanged = props.onforceopenchanged.clone();
+    use_event(
+        &web_sys::window().and_then(|w| w.document()).unwrap(),
+        "click",
+        move |e| {
+            if let Some(element) = web_sys::window()
+                .and_then(|w| w.document())
+                .and_then(|d| d.get_element_by_id(ID))
+            {
+                let node = e.target_dyn_into::<Node>();
+                if element.contains(node.as_ref()) {
+                    return;
+                }
+            }
+            onforceopenchanged.emit(false);
+        },
+    );
     use_effect_with_deps(
         |state| {
             let state = state.clone();
@@ -111,15 +127,6 @@ pub fn image_browser_dialog(props: &ImageBrowserDialogProps) -> Html {
         state.clone(),
     );
     {
-        let props = props.clone();
-        use_effect_with_deps(
-            move |window_store| {
-                if window_store.has_focus {
-                    props.onforceopenchanged.emit(false);
-                }
-            },
-            window_store.clone(),
-        );
         let curr = curr.clone();
         use_effect_with_deps(
             |_| {

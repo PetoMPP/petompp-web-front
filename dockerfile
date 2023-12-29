@@ -14,4 +14,4 @@ WORKDIR /front
 COPY . .
 RUN npm install -D
 EXPOSE 8080
-CMD trunk serve --release --address 0.0.0.0
+CMD trunk serve --no-autoreload --release --address 0.0.0.0

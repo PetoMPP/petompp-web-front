@@ -70,7 +70,7 @@ pub fn blog() -> Html {
         }
     };
     html! {
-        <PageBase>
+        <PageBase title={locales_store.get(TK::Blog)}>
         <Editable resid={ResId::ResKey("blog-intro".to_string())}/>
         {posts}
         </PageBase>

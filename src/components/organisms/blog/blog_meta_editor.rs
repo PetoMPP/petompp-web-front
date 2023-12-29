@@ -57,7 +57,8 @@ pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
                 label={locales_store.get(TK::Summary)}
                 enabled={true}
                 value={props.data.as_ref().map(|d| d.summary.clone()).unwrap_or_default()}
-                onchange={summary_onchange}/>
+                onchange={summary_onchange}
+                error={false}/>
         </>
     }
 }
@@ -113,7 +114,7 @@ pub fn blog_tags_editor(props: &BlogTagsEditorProps) -> Html {
         })
     };
     html! {
-        <Label label={locales_store.get(TK::Tags)}>
+        <Label label={locales_store.get(TK::Tags)} error={false}>
             <div class={"flex h-full gap-2 py-3 items-center input input-bordered shadow-md flex-wrap"}>
                 {tag_nodes}
                 <input class={"flex w-12 grow outline-none bg-transparent"} type={"text"} placeholder={locales_store.get(TK::EnterTag)} {onkeydown} />
@@ -147,7 +148,7 @@ pub fn image_link_editor(props: &ImageLinkEditorProps) -> Html {
             .merge(focus_out)
     };
     html! {
-        <Label label={locales_store.get(TK::Image)} >
+        <Label label={locales_store.get(TK::Image)} error={false}>
             <BlogImageSelect data={props.data.clone()} {ondatachanged} />
         </Label>
     }
