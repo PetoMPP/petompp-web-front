@@ -1,4 +1,4 @@
-use self::macros::onchange;
+// use self::macros::onchange;
 use crate::{
     components::{
         atoms::{
@@ -11,7 +11,8 @@ use crate::{
     utils::{ext::Mergable, style::get_svg_bg_mask_style},
 };
 use petompp_web_models::models::{
-    blog_data::BlogMetaData,
+    blob_data::BlobMetaData,
+    blog_data::{BlogData, BlogMetaData},
     tag::{Tag, Tags},
 };
 use wasm_bindgen::JsCast;
@@ -28,10 +29,55 @@ pub struct BlogMetaEditorProps {
 #[function_component(BlogMetaEditor)]
 pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
-    let title_onchange = onchange!(props, props.data.title);
-    let tags_onchange = onchange!(props, props.data.tags);
-    let image_onchange = onchange!(props, props.data.image);
-    let summary_onchange = onchange!(props, props.data.summary);
+    let title_onchange = {
+        let props = props.clone();
+        props
+            .ondatachanged
+            .clone()
+            .reform(move |data| BlogMetaData {
+                blob: BlobMetaData {
+                    title: data,
+                    ..props.data.clone().map(|d| d.blob).unwrap_or_default()
+                },
+                ..props.data.clone().unwrap_or_default()
+            })
+    };
+    let tags_onchange = {
+        let props = props.clone();
+        props
+            .ondatachanged
+            .clone()
+            .reform(move |data| BlogMetaData {
+                blob: BlobMetaData {
+                    tags: data,
+                    ..props.data.clone().map(|d| d.blob).unwrap_or_default()
+                },
+                ..props.data.clone().unwrap_or_default()
+            })
+    };
+    let image_onchange = {
+        let props = props.clone();
+        props
+            .ondatachanged
+            .clone()
+            .reform(move |data| BlogMetaData {
+                image: data,
+                ..props.data.clone().unwrap_or_default()
+            })
+    };
+    let summary_onchange = {
+        let props = props.clone();
+        props
+            .ondatachanged
+            .clone()
+            .reform(move |data| BlogMetaData {
+                blob: BlobMetaData {
+                    summary: data,
+                    ..props.data.clone().map(|d| d.blob).unwrap_or_default()
+                },
+                ..props.data.clone().unwrap_or_default()
+            })
+    };
 
     html! {
         <>
@@ -39,24 +85,24 @@ pub fn blog_meta_editor(props: &BlogMetaEditorProps) -> Html {
                 label={locales_store.get(TK::Title)}
                 itype={InputType::Text}
                 enabled={true}
-                value={props.data.as_ref().map(|d| d.title.clone()).unwrap_or_default()}
+                value={props.data.as_ref().map(|d| d.blob.title.clone()).unwrap_or_default()}
                 onchange={title_onchange}/>
-            <BlogTagsEditor data={props.data.as_ref().map(|d| d.tags.clone())} ondatachanged={tags_onchange}/>
+            <BlogTagsEditor data={props.data.as_ref().map(|d| d.blob.tags.clone())} ondatachanged={tags_onchange}/>
             <TextInput
                 label={locales_store.get(TK::Created)}
                 itype={InputType::Text}
                 enabled={false}
-                value={props.data.as_ref().map(|d| d.created.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
+                value={props.data.as_ref().map(|d| d.blob.created.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
             <TextInput
                 label={locales_store.get(TK::Updated)}
                 itype={InputType::Text}
                 enabled={false}
-                value={props.data.as_ref().map(|d| d.updated.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
+                value={props.data.as_ref().map(|d| d.blob.updated.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_default()}/>
             <ImageLinkEditor data={props.data.as_ref().map(|d| d.image.clone())} ondatachanged={image_onchange}/>
             <TextareaInput
                 label={locales_store.get(TK::Summary)}
                 enabled={true}
-                value={props.data.as_ref().map(|d| d.summary.clone()).unwrap_or_default()}
+                value={props.data.as_ref().map(|d| d.blob.summary.clone()).unwrap_or_default()}
                 onchange={summary_onchange}
                 error={false}/>
         </>
@@ -152,21 +198,4 @@ pub fn image_link_editor(props: &ImageLinkEditorProps) -> Html {
             <BlogImageSelect data={props.data.clone()} {ondatachanged} />
         </Label>
     }
-}
-
-mod macros {
-    macro_rules! onchange {
-        ($props:expr, $_0:ident.$_1:ident.$field:ident) => {{
-            let props = $props.clone();
-            props
-                .ondatachanged
-                .clone()
-                .reform(move |data| BlogMetaData {
-                    $field: data,
-                    ..props.data.clone().unwrap_or_default()
-                })
-        }};
-    }
-
-    pub(crate) use onchange;
 }

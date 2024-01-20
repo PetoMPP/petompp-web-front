@@ -18,6 +18,7 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
     let navigator = use_navigator().unwrap();
     let tags = props
         .meta
+        .blob
         .tags
         .tags()
         .into_iter()
@@ -28,7 +29,7 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
         img => BlobClient::get_url(format!("image-upload/{}", img).as_str()),
     };
     let onclick = {
-        let id = props.meta.id.clone();
+        let id = props.meta.blob.id.clone();
         Callback::from(move |_| navigator.push(&Route::BlogPost { id: id.clone() }))
     };
 
@@ -41,15 +42,15 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
                     {for tags}
                     </div>
                 </div>
-                <h2 class={"text-2xl my-2 lg:my-0 font-semibold"}>{&props.meta.title}</h2>
+                <h2 class={"text-2xl my-2 lg:my-0 font-semibold"}>{&props.meta.blob.title}</h2>
                 <div class={"flex lg:flex-row flex-col gap-1 cursor-default"}>
-                    <CreatedDateDisplay date={props.meta.created} />
-                    <UpdatedDateDisplay date={props.meta.updated} />
+                    <CreatedDateDisplay date={props.meta.blob.created} />
+                    <UpdatedDateDisplay date={props.meta.blob.updated} />
                 </div>
             </div>
                 <div class={"flex flex-col"}>
                     <div class={"divider mt-0"}/>
-                    <p>{&props.meta.summary}</p>
+                    <p>{&props.meta.blob.summary}</p>
                 </div>
             </div>
         <figure class={"absolute z-0 right-0 h-full w-2/3 object-fill pointer-events-none"} {style}>

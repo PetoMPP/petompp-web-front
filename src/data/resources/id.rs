@@ -7,7 +7,7 @@ use std::{fmt::Display, str::FromStr};
 pub struct ResourceId {
     /// "<reskey>@<lang>"
     key: Option<String>,
-    /// "<folder-path>@<lang>"
+    /// "<blob-type>@<folder-path>@<lang>"
     blob: Option<String>,
 }
 
@@ -24,9 +24,16 @@ impl TryInto<(ResId, Country)> for ResourceId {
                 ))
             }
             (None, Some(blob)) => {
-                let (path, lang) = blob.split_once('@').ok_or("invalid blob")?;
+                let (blob_type, path, lang) = blob
+                    .split_once('@')
+                    .and_then(|(bt, rest)| rest.split_once('@').map(|(p, l)| (bt, p, l)))
+                    .ok_or("invalid blob")?;
                 Ok((
-                    ResId::Blob(path.to_string()),
+                    match blob_type {
+                        "blog" => ResId::Blob(BlobType::Blog(path.to_string())),
+                        "prj" => ResId::Blob(BlobType::Project(path.to_string())),
+                        _ => return Err("invalid blob type".to_string()),
+                    },
                     Country::try_from(lang).map_err(|_| "invalid lang")?,
                 ))
             }
@@ -42,26 +49,44 @@ impl From<(ResId, Country)> for ResourceId {
                 key: Some(format!("{}@{}", p, value.1.key())),
                 blob: None,
             },
-            ResId::Blob(p) => Self {
+            ResId::Blob(blob_type) => Self {
                 key: None,
-                blob: Some(format!("{}@{}", p, value.1.key())),
+                blob: match blob_type {
+                    BlobType::Blog(p) => Some(format!("blog@{}@{}", p, value.1.key())),
+                    BlobType::Project(p) => Some(format!("prj@{}@{}", p, value.1.key())),
+                },
             },
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, PartialOrd, Ord, Eq)]
+pub enum BlobType {
+    Blog(String),
+    Project(String),
+}
+
+impl Display for BlobType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&match self {
+            Self::Blog(id) => format!("blog:{}", id),
+            Self::Project(id) => format!("prj:{}", id),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, PartialOrd, Ord, Eq)]
 pub enum ResId {
     ResKey(String),
-    Blob(String),
+    Blob(BlobType),
 }
 
 impl Display for ResId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&match &self {
-            ResId::ResKey(id) => format!("reskey:{}", id),
-            ResId::Blob(id) => format!("blob:{}", id),
-        })
+        match &self {
+            ResId::ResKey(id) => f.write_str(&format!("reskey:{}", id)),
+            ResId::Blob(id) => id.fmt(f),
+        }
     }
 }
 
@@ -72,7 +97,8 @@ impl FromStr for ResId {
         let (kind, id) = s.split_once(':').ok_or("invalid id")?;
         match kind {
             "reskey" => Ok(Self::ResKey(id.to_string())),
-            "blob" => Ok(Self::Blob(id.to_string())),
+            "blog" => Ok(Self::Blob(BlobType::Blog(id.to_string()))),
+            "prj" => Ok(Self::Blob(BlobType::Project(id.to_string()))),
             _ => Err("invalid id"),
         }
     }
@@ -81,7 +107,9 @@ impl FromStr for ResId {
 impl ResId {
     pub fn id(&self) -> &str {
         match self {
-            Self::ResKey(id) | Self::Blob(id) => id,
+            Self::ResKey(id)
+            | Self::Blob(BlobType::Blog(id))
+            | Self::Blob(BlobType::Project(id)) => id,
         }
     }
 
@@ -90,9 +118,12 @@ impl ResId {
             Self::ResKey(reskey) => ApiClient::get_resource(reskey.as_str(), lang)
                 .await
                 .map(|(_, v)| v),
-            Self::Blob(path) => {
-                BlobClient::get_post_content(format!("{}/{}.md", path, lang.key()).as_str()).await
-            }
+            Self::Blob(blob_type) => match blob_type {
+                BlobType::Blog(id) => {
+                    BlobClient::get_post_content(format!("{}/{}.md", id, lang.key()).as_str()).await
+                }
+                BlobType::Project(id) => todo!(),
+            },
         }
     }
 }

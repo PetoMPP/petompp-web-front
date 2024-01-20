@@ -7,7 +7,7 @@ use crate::{
         resources::{id::ResId, store::LocalStore},
         session::SessionStore,
     },
-    pages::editor::{EditorProps, EditorState},
+    pages::editor::{EditorData, EditorProps, EditorState},
 };
 use petompp_web_models::models::blog_data::BlogData;
 use yew::prelude::*;
@@ -19,50 +19,50 @@ pub fn save_button(props: &EditorProps) -> Html {
     let (local_store, local_dispatch) = use_store::<LocalStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let (_, modal_dispatch) = use_store::<ModalStore>();
-    let (Some(resid), Some(lang)) = (&props.resid, &props.lang) else {
+    let state = match &props.state {
+        EditorState::Ok(Some(state)) => state,
+        _ => {
+            return html! {};
+        }
+    };
+    let (resid, lang) = &state.id;
+    let Some(data) = local_store.get(resid, lang.key()) else {
         return html! {};
     };
-    let Some((value, meta)) = local_store.get(resid, lang.key()) else {
-        return html! {};
-    };
-    if let EditorState::Loading = &props.state {
-        return html! {};
-    }
-    let onstatechange = &props.onstatechanged;
+    let onstatechange = props.onstatechanged.clone();
     let token = session_store.token.clone().unwrap_or_default();
-    let isnew = matches!(&props.state, EditorState::Ok(Some((Some(true), _, _))));
-    let onclick = async_event!(
-        |onstatechange, local_dispatch, resid, lang, value, meta, token| {
-            onstatechange.emit(EditorState::Loading);
-            match match &resid {
-                ResId::ResKey(key) => match isnew {
-                    true => ApiClient::create_resource(&token, key, &lang, &value).await,
-                    false => ApiClient::update_resource(&token, key, &lang, &value).await,
-                },
-                ResId::Blob(_) => {
-                    ApiClient::create_or_update_post(
-                        resid.id(),
-                        lang.key(),
-                        &token,
-                        &BlogData {
-                            meta: meta.clone().unwrap_or_default(),
-                            content: value,
-                        },
-                    )
-                    .await
-                }
-            } {
-                Ok(_) => {
-                    local_dispatch.reduce_mut(|store| store.remove(&resid, lang.key()));
-                    onstatechange.emit(EditorState::Ok(None));
-                }
-                Err(e) => {
-                    onstatechange.emit(EditorState::Err(e));
-                }
+    let is_new = state.is_new.unwrap_or_default();
+    let onclick = async_event!(|onstatechange, resid, lang, local_dispatch, data, token| {
+        onstatechange.emit(EditorState::Loading);
+        match match data {
+            EditorData::Resource(value) => match is_new {
+                true => ApiClient::create_resource(&token, resid.id(), &lang, &value).await,
+                false => ApiClient::update_resource(&token, resid.id(), &lang, &value).await,
+            },
+            EditorData::Blog((value, meta)) => {
+                ApiClient::create_or_update_post(
+                    resid.id(),
+                    lang.key(),
+                    &token,
+                    &BlogData {
+                        meta: meta.clone(),
+                        content: value,
+                    },
+                )
+                .await
+            }
+            EditorData::Project((value, meta)) => todo!(),
+        } {
+            Ok(_) => {
+                local_dispatch.reduce_mut(|store| store.remove(&resid, lang.key()));
+                onstatechange.emit(EditorState::Ok(None));
+            }
+            Err(e) => {
+                onstatechange.emit(EditorState::Err(e));
             }
         }
-    );
-    let (text, title, message) = match isnew {
+    });
+    let (text, title, message) = match is_new {
         true => (
             locales_store.get(TK::Create),
             locales_store.get(TK::CreateResource),

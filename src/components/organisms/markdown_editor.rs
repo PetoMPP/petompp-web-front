@@ -1,5 +1,6 @@
 use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
+use crate::pages::editor::EditorData;
 use crate::utils::js::{set_textarea_height, set_textarea_text};
 use crate::{api::client::RequestError, data::session::SessionStore};
 use std::rc::Rc;
@@ -13,8 +14,8 @@ const UPLOAD_FOLDER: &str = "editor";
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct MarkdownEditorProps {
-    pub state: String,
-    pub onchanged: Callback<String>,
+    pub state: EditorData,
+    pub onchanged: Callback<EditorData>,
 }
 
 #[function_component(MarkdownEditor)]
@@ -23,7 +24,7 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     use_effect_with_deps(
         move |initial_state| {
-            set_textarea_text(initial_state.as_ref(), TEXTAREA_ID);
+            set_textarea_text(initial_state.to_string().as_str(), TEXTAREA_ID);
         },
         props.state.clone(),
     );
@@ -32,6 +33,11 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
         let props = props.clone();
         let session_store = session_store.clone();
         let error_state = error_state.clone();
+        let onchanged = Callback::from(move |new_value: String| {
+            props
+                .onchanged
+                .emit(props.state.clone().with_string(new_value))
+        });
         Callback::from(move |e: Event| {
             let Ok(e) = e.dyn_into::<ClipboardEvent>() else {
                 return;
@@ -45,21 +51,24 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
             let Some(file) = files.get(0) else {
                 return;
             };
+            let onchanged = onchanged.clone();
             send_file(
                 session_store.clone(),
                 file.clone(),
                 error_state.clone(),
-                props.onchanged.clone(),
+                onchanged,
             );
         })
     };
 
     let oninput = {
         let onchanged = props.onchanged.clone();
+        let state = props.state.clone();
         Callback::from(move |e: InputEvent| {
             let element: HtmlInputElement = e.target_unchecked_into();
             let value = element.value();
-            onchanged.emit(value);
+            let state = state.clone();
+            onchanged.emit(state.with_string(value));
             set_textarea_height(&element);
         })
     };
@@ -67,7 +76,13 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
         let props = props.clone();
         let session_store = session_store.clone();
         let error_state = error_state.clone();
+        let onchanged = Callback::from(move |new_value: String| {
+            props
+                .onchanged
+                .emit(props.state.clone().with_string(new_value))
+        });
         Callback::from(move |e: DragEvent| {
+            let onchanged = onchanged.clone();
             e.prevent_default();
             let Some(dt) = e.data_transfer() else {
                 return;
@@ -76,12 +91,7 @@ pub fn markdown_editor(props: &MarkdownEditorProps) -> Html {
                 return;
             };
             if let Some(file) = files.get(0) {
-                send_file(
-                    session_store.clone(),
-                    file,
-                    error_state.clone(),
-                    props.onchanged.clone(),
-                );
+                send_file(session_store.clone(), file, error_state.clone(), onchanged);
             }
         })
     };

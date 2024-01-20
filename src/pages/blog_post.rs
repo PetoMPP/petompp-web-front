@@ -9,7 +9,7 @@ use crate::{
     },
     data::{
         locales::{store::LocalesStore, tk::TK},
-        resources::id::ResId,
+        resources::id::{ResId, BlobType},
         session::SessionStore,
     },
     pages::page_base::PageBase,
@@ -54,7 +54,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
                         }
                     };
                 let md = match BlobClient::get_post_content(
-                    format!("{}/{}.md", meta.id, meta.lang.key()).as_str(),
+                    format!("{}/{}.md", meta.blob.id, meta.blob.lang.key()).as_str(),
                 )
                 .await
                 {
@@ -73,7 +73,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
         State::Ok(Some((m, md, _))) => (
             html! {<BlogPostMeta meta={m.clone()} />},
             Some(html! {<Markdown markdown={md.clone()} allowhtml={true} interactive={Some(())}/>}),
-            m.title.clone(),
+            m.blob.title.clone(),
         ),
         State::Loading | State::Ok(None) => {
             (html! { <Loading /> }, None, locales_store.get(TK::Loading))
@@ -97,7 +97,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
     let onclick = Callback::from(move |_| navigator.push(&Route::Blog));
     html! {
         <PageBase {title}>
-            <EditButton resid={ResId::Blob(props.id.clone())} />
+            <EditButton resid={ResId::Blob(BlobType::Blog(props.id.clone()))} />
             <a class={"lg:mb-6 mb-4"} href={"javascript:void(0);"} {onclick}>{locales_store.get(TK::BackToBlogPosts)}</a>
             {meta}
             <div class={"divider"}/>
@@ -121,16 +121,16 @@ pub fn blog_post_meta(props: &BlogPostMetaProps) -> Html {
     };
     let sign = format!(
         "{} by {}",
-        DateTime::<Local>::from(props.meta.created).format("%Y-%m-%d %H:%M:%S"),
+        DateTime::<Local>::from(props.meta.blob.created).format("%Y-%m-%d %H:%M:%S"),
         "PetoMPP"
     );
     html! {
         <>
         <div class={"hero mb-4 py-12 lg:py-16 rounded-lg p-2"} style={format!("background-image: url({});", img)}>
-            <div class={"flex p-4 lg:w-1/2 text-base-content font-semibold text-center text-xl lg:text-4xl aspect-1-1 bg-base-100 bg-opacity-60 rounded-full items-center"}>
+            <div class={"flex p-4 lg:w-2/3 xl:w-1/2 text-base-content font-semibold text-center text-xl lg:text-2xl xl:text-4xl min-w-min aspect-1-1 bg-base-100 bg-opacity-60 rounded-full items-center"}>
                 <div>
                     <div class={"divider divider-base-content w-5/6 mx-auto"} />
-                    <p class={"px-6 lg:px-12"}>{&props.meta.title}</p>
+                    <p class={"px-6 lg:px-12"}>{&props.meta.blob.title}</p>
                     <div class={"divider divider-base-content w-5/6 mx-auto"} />
                 </div>
             </div>

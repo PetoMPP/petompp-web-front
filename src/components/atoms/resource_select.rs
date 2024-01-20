@@ -7,14 +7,14 @@ use crate::{
     data::{
         locales::{store::LocalesStore, tk::TK},
         resources::{
-            id::{ResId, ResourceId},
+            id::{BlobType, ResId, ResourceId},
             store::LocalStore,
         },
         session::SessionStore,
     },
-    pages::editor::EditorState,
+    pages::editor::{EditorData, EditorState},
 };
-use petompp_web_models::models::{blog_data::BlogMetaData, country::Country};
+use petompp_web_models::models::country::Country;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::{platform::spawn_local, prelude::*};
@@ -32,13 +32,15 @@ pub struct ResourceSelectProps {
 enum Mode {
     Resources,
     Posts,
+    Projects,
 }
 
 impl From<&ResId> for Mode {
     fn from(resid: &ResId) -> Self {
         match resid {
             ResId::ResKey(_) => Self::Resources,
-            ResId::Blob(_) => Self::Posts,
+            ResId::Blob(BlobType::Blog(_)) => Self::Posts,
+            ResId::Blob(BlobType::Project(_)) => Self::Projects,
         }
     }
 }
@@ -47,7 +49,8 @@ impl Mode {
     fn next(&self) -> Self {
         match self {
             Self::Resources => Self::Posts,
-            Self::Posts => Self::Resources,
+            Self::Posts => Self::Projects,
+            Self::Projects => Self::Resources,
         }
     }
 }
@@ -183,6 +186,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     });
     let res_page = use_state_eq(|| 0);
     let blog_page = use_state_eq(|| 0);
+    let proj_page = use_state_eq(|| 0);
     let onclick = {
         let mode = mode.clone();
         Callback::from(move |_| mode.set(mode.next()))
@@ -247,6 +251,11 @@ fn resource_list(props: &ResourceListProps) -> Html {
                     .collect::<Vec<_>>(),
             ),
         ),
+        Mode::Projects => (
+            locales_store.get(TK::Projects),
+            proj_page,
+            vec_into_elements(todo!()),
+        ),
     };
     let page_count = elements.len();
     let inc_page = {
@@ -286,17 +295,25 @@ fn resource_list(props: &ResourceListProps) -> Html {
                     spawn_local(async move {
                         match ApiClient::get_res_ids(token.unwrap_or_default().as_str()).await {
                             Ok((res, pos)) => {
-                                let (resid, meta, exists) = match *mode {
+                                let (resid, data, exists) = match *mode {
                                     Mode::Resources => {
                                         let resid = ResId::ResKey(id);
                                         let contains = res.contains(&resid);
-                                        (resid, None, contains)
+                                        (resid, EditorData::Resource(Default::default()), contains)
                                     }
                                     Mode::Posts => {
-                                        let resid = ResId::Blob(id);
+                                        let resid = ResId::Blob(BlobType::Blog(id));
                                         let contains = pos.contains(&resid);
-                                        (resid, Some(BlogMetaData::default()), contains)
+                                        (
+                                            resid,
+                                            EditorData::Blog((
+                                                Default::default(),
+                                                Default::default(),
+                                            )),
+                                            contains,
+                                        )
                                     }
+                                    Mode::Projects => todo!(),
                                 };
                                 if !exists {
                                     local_dispatch.reduce_mut(|s| {
@@ -306,8 +323,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
                                         s.insert(
                                             resid.clone(),
                                             currlang.unwrap_or_default().key(),
-                                            String::new(),
-                                            meta.clone(),
+                                            data,
                                         );
                                     });
                                 }
@@ -337,6 +353,8 @@ fn resource_list(props: &ResourceListProps) -> Html {
             match *mode {
                 Mode::Resources => locales_store.get(TK::NewResource),
                 Mode::Posts => locales_store.get(TK::NewBlogPost),
+                // Mode::Projects => locales_store.get(TK::NewProject),
+                Mode::Projects => todo!(),
             }
         }},
         State::Loading => html! {

@@ -18,7 +18,7 @@ use crate::{
     data::{
         locales::{store::LocalesStore, tk::TK},
         resources::{
-            id::{ResId, ResourceId},
+            id::{BlobType, ResId, ResourceId},
             store::LocalStore,
         },
         session::SessionStore,
@@ -27,22 +27,49 @@ use crate::{
     router::route::Route,
     utils::style::get_svg_bg_mask_style,
 };
-use petompp_web_models::models::blog_data::BlogMetaData;
 use petompp_web_models::models::country::Country;
+use petompp_web_models::models::{blog_data::BlogMetaData, project_data::ProjectMetaData};
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-pub type EditorState = State<
-    Option<(
-        Option<bool>,
-        (ResId, Country),
-        (String, Option<BlogMetaData>),
-    )>,
-    RequestError,
->;
+pub type EditorState = State<Option<EditorDataState>, RequestError>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EditorData {
+    Resource(String),
+    Blog((String, BlogMetaData)),
+    Project((String, ProjectMetaData)),
+}
+
+impl std::fmt::Display for EditorData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EditorData::Resource(s) | EditorData::Blog((s, _)) | EditorData::Project((s, _)) => {
+                f.write_str(s.as_str())
+            }
+        }
+    }
+}
+
+impl EditorData {
+    pub fn with_string(self, s: String) -> Self {
+        match self {
+            Self::Resource(_) => Self::Resource(s),
+            Self::Blog((_, m)) => Self::Blog((s, m)),
+            Self::Project((_, m)) => Self::Project((s, m)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EditorDataState {
+    pub is_new: Option<bool>,
+    pub id: (ResId, Country),
+    pub data: EditorData,
+}
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct EditorProps {
@@ -58,7 +85,11 @@ pub fn editor() -> Html {
     let (resid, lang) = location
         .query::<ResourceId>()
         .ok()
-        .and_then(|r| TryInto::<(ResId, Country)>::try_into(r).ok())
+        .and_then(|r| {
+            TryInto::<(ResId, Country)>::try_into(r)
+                .map_err(|e| gloo::console::error!(e))
+                .ok()
+        })
         .map(|(r, l)| (Some(r), Some(l)))
         .unwrap_or_default();
     let (_, session_dispatch) = use_store::<SessionStore>();
@@ -79,22 +110,24 @@ pub fn editor() -> Html {
             };
             let state = state.clone();
             let local_store = local_store.clone();
-            let cached_state = local_store.get(&resid, lang.key()).cloned();
+            let cached_state = local_store.get(&resid, lang.key());
             let any_cached_state = cached_state.is_some() || local_store.exists(&resid);
             match &*state {
-                State::Ok(Some((n, (r, l), value))) if r == &resid && l == &lang => {
+                // we already know that the resource exists or not, no need to call api
+                State::Ok(Some(data_state))
+                    if data_state.is_new.is_some()
+                        && &data_state.id.0 == &resid
+                        && &data_state.id.1 == &lang =>
+                {
                     if let Some(local_value) = &cached_state {
-                        if value == local_value {
-                            return;
+                        if &data_state.data != local_value {
+                            state.set(State::Ok(Some(EditorDataState {
+                                data: local_value.clone(),
+                                ..data_state.clone()
+                            })));
                         }
-                        // we already know that the resource exists or not, no need to call api
-                        if n.is_some() {
-                            state.set(State::Ok(Some((*n, (resid, lang), local_value.clone()))));
-                            return;
-                        }
-                    } else {
-                        return;
                     }
+                    return;
                 }
                 State::Loading | State::Err(_) => return,
                 _ => state.set(State::Loading),
@@ -102,46 +135,46 @@ pub fn editor() -> Html {
             spawn_local(async move {
                 // does current resource exist?
                 let (is_new, new_state) = match &resid {
-                    ResId::Blob(p) => match ApiClient::get_post_meta(p, lang.key()).await {
-                        Ok(m) => match resid.get_value(&lang).await {
-                            Ok(v) => (false, Some((v, Some(m)))),
-                            Err(e) => {
-                                state.set(State::Err(e));
-                                return;
-                            }
-                        },
-                        Err(e) => match e {
-                            RequestError::Endpoint(404, _) => {
+                    ResId::Blob(blob_type) => match blob_type {
+                        BlobType::Blog(id) => {
+                            match ApiClient::get_post_meta(id, lang.key()).await {
+                                Ok(m) => match resid.get_value(&lang).await {
+                                    Ok(v) => (false, Some(EditorData::Blog((v, m)))),
+                                    Err(e) => {
+                                        state.set(State::Err(e));
+                                        return;
+                                    }
+                                },
                                 // does it exist in another language?
-                                match ApiClient::get_posts_meta(Some(p.to_string())).await {
-                                    Ok(_) => (true, None),
-                                    Err(e) => match e {
-                                        RequestError::Endpoint(404, _) => {
+                                Err(RequestError::Endpoint(404, _)) => {
+                                    match ApiClient::get_posts_meta(Some(id.to_string())).await {
+                                        Ok(_) => (true, None),
+                                        Err(e) => match e {
                                             // does it exist locally?
-                                            match cached_state.is_some() || any_cached_state {
-                                                true => (true, None),
-                                                false => {
-                                                    state.set(State::Err(e));
-                                                    return;
-                                                }
+                                            RequestError::Endpoint(404, _)
+                                                if cached_state.is_some() || any_cached_state =>
+                                            {
+                                                gloo::console::log!("cached");
+                                                (true, None)
                                             }
-                                        }
-                                        _ => {
-                                            state.set(State::Err(e));
-                                            return;
-                                        }
-                                    },
+                                            _ => {
+                                                state.set(State::Err(e));
+                                                return;
+                                            }
+                                        },
+                                    }
+                                }
+                                Err(e) => {
+                                    state.set(State::Err(e));
+                                    return;
                                 }
                             }
-                            _ => {
-                                state.set(State::Err(e));
-                                return;
-                            }
-                        },
+                        }
+                        BlobType::Project(_) => todo!(),
                     },
                     ResId::ResKey(k) => match ApiClient::get_resource(k.as_str(), &lang).await {
                         Ok((c, v)) => match c == lang {
-                            true => (false, Some((v, None))),
+                            true => (false, Some(EditorData::Resource(v))),
                             false => (false, None),
                         },
                         Err(e) => match cached_state.is_some() || any_cached_state {
@@ -155,24 +188,39 @@ pub fn editor() -> Html {
                 };
                 match (new_state, cached_state) {
                     (Some(_), Some(cs)) => {
-                        state.set(State::Ok(Some((Some(is_new), (resid, lang), cs.clone()))));
+                        state.set(State::Ok(Some(EditorDataState {
+                            data: cs.clone(),
+                            id: (resid.clone(), lang),
+                            is_new: Some(is_new),
+                        })));
                     }
                     (Some(ns), None) => {
-                        state.set(State::Ok(Some((Some(is_new), (resid, lang), ns))));
+                        state.set(State::Ok(Some(EditorDataState {
+                            data: ns.clone(),
+                            id: (resid.clone(), lang),
+                            is_new: Some(is_new),
+                        })));
                     }
                     (None, Some(cs)) => {
-                        state.set(State::Ok(Some((Some(is_new), (resid, lang), cs.clone()))));
+                        state.set(State::Ok(Some(EditorDataState {
+                            data: cs.clone(),
+                            id: (resid.clone(), lang),
+                            is_new: Some(is_new),
+                        })));
                     }
                     (None, None) => {
                         let meta = match &resid {
                             ResId::Blob(_) => Some(BlogMetaData::default()),
                             _ => None,
                         };
-                        state.set(State::Ok(Some((
-                            Some(is_new),
-                            (resid, lang),
-                            ("".to_string(), meta),
-                        ))));
+                        state.set(State::Ok(Some(EditorDataState {
+                            data: match &resid {
+                                ResId::Blob(_) => EditorData::Blog((String::new(), meta.unwrap())),
+                                _ => EditorData::Resource(String::new()),
+                            },
+                            id: (resid.clone(), lang),
+                            is_new: Some(is_new),
+                        })));
                     }
                 }
             })
@@ -185,40 +233,30 @@ pub fn editor() -> Html {
         }
     }
     let (editor, title) = match &*state {
-        State::Ok(Some((is_new, (resid, lang), (value, meta)))) => {
+        State::Ok(Some(state)) => {
+            let (resid, lang) = state.id.clone();
             let editor = match &*is_preview {
                 true => {
-                    html! {<MarkdownPreview resid={resid.clone()} markdown={value.clone()} meta={meta.clone()} />}
+                    html! {<MarkdownPreview data={state.clone()} />}
                 }
                 false => {
                     let onchanged = {
                         let local_dispatch = local_dispatch.clone();
                         let resid = resid.clone();
-                        let lang = *lang;
-                        let meta = meta.clone();
-                        Callback::from(move |data: String| {
-                            local_dispatch.reduce_mut(|store| {
-                                if let Some((value, _)) = store.get_mut(&resid, lang.key()) {
-                                    *value = data.clone();
-                                } else {
-                                    store.insert(
-                                        resid.clone(),
-                                        lang.key(),
-                                        data.clone(),
-                                        meta.clone(),
-                                    );
-                                }
-                            });
+                        let lang = lang.clone();
+                        Callback::from(move |data: EditorData| {
+                            local_dispatch
+                                .reduce_mut(|store| store.insert(resid.clone(), lang.key(), data));
                         })
                     };
                     html! {
                     <div class={"border border-2 border-base-300 rounded-2xl p-2 shadow-2xl"}>
-                        <MarkdownEditor state={value.clone()} {onchanged}/>
+                        <MarkdownEditor state={state.data.clone()} {onchanged}/>
                     </div>
                     }
                 }
             };
-            let action = match is_new.unwrap_or_default() {
+            let action = match state.is_new.unwrap_or_default() {
                 true => locales_store.get(TK::Creating),
                 false => locales_store.get(TK::Editing),
             };
@@ -290,42 +328,37 @@ pub fn editor() -> Html {
         let state = state.clone();
         Callback::from(move |new_state: EditorState| state.set(new_state))
     };
-    let meta_editor = match &resid {
-        Some(ResId::Blob(_)) => match &*state {
-            State::Ok(Some((_, (resid, lang), (value, Some(meta))))) => Some({
-                let local_dispatch = local_dispatch.clone();
-                let resid = resid.clone();
-                let lang = *lang;
-                let value = value.clone();
-                let ondatachanged = Callback::from(move |data: BlogMetaData| {
-                    local_dispatch.reduce_mut(|store| {
-                        if let Some((_, meta)) = store.get_mut(&resid.clone(), lang.key()) {
-                            *meta = Some(data.clone());
-                        } else {
+    let meta_editor = match &*state {
+        State::Ok(Some(state)) => {
+            let local_dispatch = local_dispatch.clone();
+            let (resid, lang) = state.id.clone();
+            match state.data.clone() {
+                EditorData::Blog((value, meta)) => {
+                    let ondatachanged = Callback::from(move |new_data: BlogMetaData| {
+                        local_dispatch.reduce_mut(|store| {
                             store.insert(
                                 resid.clone(),
                                 lang.key(),
-                                value.clone(),
-                                Some(data.clone()),
-                            );
-                        }
+                                EditorData::Blog((value.clone(), new_data)),
+                            )
+                        })
                     });
-                });
-                html! {
-                    <Collapse label={locales_store.get(TK::BlogPostMetadata)}>
-                        <BlogMetaEditor data={meta.clone()} {ondatachanged} />
-                    </Collapse>
+                    Some(html! {
+                        <Collapse label={locales_store.get(TK::BlogPostMetadata)}>
+                            <BlogMetaEditor data={meta.clone()} {ondatachanged} />
+                        </Collapse>
+                    })
                 }
-            }),
-            State::Loading => {
-                Some(html! { <Loading resource={locales_store.get(TK::BlogPostMetadata)} /> })
+                _ => None,
             }
-            _ => None,
-        },
+        }
+        State::Loading => {
+            Some(html! { <Loading resource={locales_store.get(TK::BlogPostMetadata)} /> })
+        }
         _ => None,
     };
     let is_new = match &*state {
-        State::Ok(Some((n, _, _))) => *n,
+        State::Ok(Some(s)) => s.is_new,
         _ => None,
     };
     let edit_text = {

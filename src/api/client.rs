@@ -1,5 +1,8 @@
 use crate::{
-    data::{resources::id::ResId, session::SessionStore},
+    data::{
+        resources::id::{BlobType, ResId},
+        session::SessionStore,
+    },
     pages::login::LoginRedirect,
 };
 use petompp_web_models::{
@@ -354,6 +357,7 @@ impl ApiClient {
     }
 
     /// Ok((resources, posts))
+    /// Vec<>
     pub async fn get_res_ids(token: &str) -> Result<(Vec<ResId>, Vec<ResId>), RequestError> {
         Ok((
             ApiClient::get_resource_keys(token)
@@ -365,8 +369,13 @@ impl ApiClient {
                 let mut posts = ApiClient::get_posts_meta(None)
                     .await?
                     .into_iter()
-                    .map(|r| ResId::Blob(r.id))
+                    .map(|r| ResId::Blob(BlobType::Blog(r.blob.id)))
                     .collect::<Vec<_>>();
+                // let mut projects = ApiClient::get_projects_meta(None)
+                //     .await?
+                //     .into_iter()
+                //     .map(|r| ResId::Blob(BlobType::Project(r.blob.id)))
+                //     .collect::<Vec<_>>();
                 posts.sort();
                 posts.dedup();
                 posts

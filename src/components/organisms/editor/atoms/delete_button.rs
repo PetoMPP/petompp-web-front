@@ -4,7 +4,7 @@ use crate::{
     components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
         locales::{store::LocalesStore, tk::TK},
-        resources::id::ResId,
+        resources::id::{BlobType, ResId},
         session::SessionStore,
     },
     pages::editor::{EditorProps, EditorState},
@@ -32,17 +32,21 @@ pub fn delete_button(props: &EditorProps) -> Html {
         return html! {};
     };
     match &props.state {
-        EditorState::Loading
-        | EditorState::Ok(None)
-        | EditorState::Ok(Some((Some(true), _, _))) => return Html::default(),
+        EditorState::Loading | EditorState::Ok(None) => return Html::default(),
+        EditorState::Ok(Some(state)) if state.is_new.unwrap_or(true) => return Html::default(),
         _ => {}
     }
+    gloo::console::log!(format!("{:?}", &props.state));
     let onstatechange = &props.onstatechanged;
     let token = session_store.token.clone().unwrap_or_default();
     let onclick = async_event!(|onstatechange, navigator, resid, lang, err, token| {
         onstatechange.emit(EditorState::Loading);
         match match resid {
-            ResId::Blob(id) => ApiClient::delete_post(&id, lang.key(), &token).await,
+            ResId::Blob(blob) => match blob {
+                BlobType::Blog(id) => ApiClient::delete_post(&id, lang.key(), &token).await,
+                BlobType::Project(id) => todo!(),
+                // ApiClient::delete_project(&id, lang.key(), &token).await,
+            },
             ResId::ResKey(id) => match lang {
                 Country::UnitedKingdom => ApiClient::delete_resource(&token, &id).await,
                 _ => ApiClient::delete_resource_lang(&token, &id, &lang).await,

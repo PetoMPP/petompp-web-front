@@ -24,8 +24,11 @@ pub fn discard_button(props: &EditorProps) -> Html {
     let (Some(resid), Some(lang)) = (&props.resid, &props.lang) else {
         return html! {};
     };
-    let State::Ok(Some((is_new, _, _))) = &props.state else {
-        return html! {};
+    let is_new = match &props.state {
+        EditorState::Ok(Some(state)) => state.is_new,
+        _ => {
+            return html! {};
+        }
     };
     if local_store.get(resid, lang.key()).is_none() {
         return html! {};
@@ -36,7 +39,10 @@ pub fn discard_button(props: &EditorProps) -> Html {
             local_dispatch.reduce_mut(|store| {
                 store.remove(&resid, lang.key());
             });
+            gloo::console::log!("Discard");
+            gloo::console::log!(is_new);
             if is_new.unwrap_or_default() {
+                gloo::console::log!("Discard new");
                 navigator.push(&Route::Editor);
             }
             onstatechanged.emit(EditorState::Ok(None));

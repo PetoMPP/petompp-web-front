@@ -1,19 +1,20 @@
 use crate::{
     components::atoms::{link::HrefLink, markdown::Markdown},
-    data::resources::id::ResId,
-    pages::{blog_post::BlogPostMeta, page_base::PageBase},
+    data::resources::id::{BlobType, ResId},
+    pages::{
+        blog_post::BlogPostMeta,
+        editor::{EditorData, EditorDataState},
+        page_base::PageBase,
+    },
     router::route::Route,
     AppBase,
 };
-use petompp_web_models::models::blog_data::BlogMetaData;
 use yew::prelude::*;
 use yew_router::Routable;
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct MarkdownPreviewProps {
-    pub resid: ResId,
-    pub markdown: String,
-    pub meta: Option<BlogMetaData>,
+    pub data: EditorDataState,
 }
 
 #[function_component(MarkdownPreview)]
@@ -22,19 +23,27 @@ pub fn markdown_preview(props: &MarkdownPreviewProps) -> Html {
     let url = location.protocol().unwrap()
         + "//"
         + location.host().unwrap().as_str()
-        + match &props.resid {
-            ResId::Blob(id) => (Route::BlogPost { id: id.clone() }).to_path(),
+        + match &props.data.id.0 {
+            ResId::Blob(id) => match &id {
+                BlobType::Blog(s) => (Route::BlogPost { id: id.to_string() }).to_path(),
+                BlobType::Project(s) => todo!(),
+            },
             ResId::ResKey(id) => "/".to_string() + id.trim_end_matches("-content"),
         }
         .as_str();
-    let meta = match &props.resid {
-        ResId::Blob(_) => Some(html! {
-            <>
-            <BlogPostMeta meta={props.meta.clone().unwrap_or_default()} />
-            <div class={"divider"}/>
-            </>
-        }),
-        _ => None,
+    let (meta, markdown) = match &props.data.data {
+        EditorData::Blog((markdown, meta)) => (
+            Some(html! {
+                <>
+                <BlogPostMeta meta={meta.clone()} />
+                <div class={"divider"}/>
+                </>
+            }),
+            markdown.clone(),
+        ),
+        EditorData::Project((markdown, _)) | EditorData::Resource(markdown) => {
+            (None, markdown.clone())
+        }
     };
     html! {
         <div class={"mockup-browser border border-2 border-base-300 shadow-2xl"}>
@@ -45,7 +54,7 @@ pub fn markdown_preview(props: &MarkdownPreviewProps) -> Html {
                 <AppBase preview={true}>
                 <PageBase mockup={Some(())} title={String::new()}>
                     {meta}
-                    <Markdown markdown={props.markdown.clone()} allowhtml={true}/>
+                    <Markdown {markdown} allowhtml={true}/>
                 </PageBase>
                 </AppBase>
             </div>

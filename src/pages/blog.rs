@@ -42,9 +42,13 @@ pub fn blog() -> Html {
                 .clone()
                 .into_iter()
                 .filter(|meta| {
-                    tags.is_empty() || tags.tags().iter().any(|t| meta.tags.tags().contains(t))
+                    tags.is_empty()
+                        || tags
+                            .tags()
+                            .iter()
+                            .any(|t| meta.blob.tags.tags().contains(t))
                 })
-                .filter(|meta| meta.lang == locales_store.curr)
+                .filter(|meta| meta.blob.lang == locales_store.curr)
                 .map(|meta| {
                     html! {
                         <BlogSummary {meta}/>
