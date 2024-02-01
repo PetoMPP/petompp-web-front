@@ -3,6 +3,7 @@ use crate::{
         atoms::text_input::{InputType, TextInput, TextareaInput},
         organisms::{
             blob_tags_input::BlobTagsInput, image_directory_browser::ImageDirectoryBrowser,
+            image_link_input::ImageLinkInput,
         },
     },
     data::locales::{store::LocalesStore, tk::TK},
@@ -49,6 +50,18 @@ pub fn project_meta_editor(props: &ProjectMetaEditorProps) -> Html {
             data
         })
     };
+    let splash_onchange = {
+        let data = data.clone();
+        let ondatachanged = ondatachanged.clone();
+        ondatachanged.reform(move |value| {
+            let mut data = data.clone();
+            data.set_splash(value);
+            data
+        })
+    };
+    let container = "project".to_string();
+    let folder = Some(data.id().to_string() + "/images/");
+    let splash = data.splash().cloned();
 
     html! {
         <>
@@ -65,7 +78,8 @@ pub fn project_meta_editor(props: &ProjectMetaEditorProps) -> Html {
                 onchange={summary_onchange}
                 error={false}/>
             <BlobTagsInput data={props.data.tags.clone()} ondatachanged={tags_onchange}/>
-            <ImageDirectoryBrowser container={"project".to_string()} folder={Some((props.data.id().to_string() + "/images/").to_string())}/>
+            <ImageDirectoryBrowser container={container.clone()} folder={folder.clone()}/>
+            <ImageLinkInput {container} {folder} data={splash} ondatachanged={splash_onchange}/>
         </>
     }
 }

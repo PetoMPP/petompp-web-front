@@ -17,7 +17,7 @@ futures = "0.3"
 gloo = "0.10"
 lazy_static = "1.4"
 markdown = "1.0.0-alpha.12"
-petompp-web-models = { git = "https://github.com/PetoMPP/petompp-web-models.git", branch = "0.7.3", features = [
+petompp-web-models = { git = "https://github.com/PetoMPP/petompp-web-models.git", branch = "0.7.4", features = [
     "timeago",
     "wasm",
 ] }

@@ -12,6 +12,7 @@ use crate::{
         state::State,
     },
     data::{
+        blob::BlobStore,
         locales::{store::LocalesStore, tk::TK},
         session::SessionStore,
     },
@@ -28,19 +29,27 @@ use yewdux::prelude::*;
 #[derive(Clone, Properties, PartialEq)]
 pub struct BlobImageSelectProps {
     pub container: String,
+    pub folder: Option<String>,
     pub data: Option<String>,
     pub ondatachanged: Callback<Option<String>>,
 }
 
-pub const IMAGE_BROWSER_ID: &str = "image-browser";
-
 #[function_component(BlobImageSelect)]
 pub fn blob_image_select(props: &BlobImageSelectProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
+    let id = use_memo(
+        |_| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
+        (),
+    );
     let force_open = use_state(|| false);
     let src = <ApiClient as BlobClient>::get_url(
-        "image-upload",
-        props.data.clone().unwrap_or_default().as_str(),
+        &props.container,
+        format!(
+            "{}{}",
+            props.folder.clone().unwrap_or_default(),
+            props.data.clone().unwrap_or_default()
+        )
+        .as_str(),
     );
     let mut dropdown_class = classes!(
         "dropdown",
@@ -65,7 +74,7 @@ pub fn blob_image_select(props: &BlobImageSelectProps) -> Html {
     let config = BlobBrowserDialogConfig {
         readonly: false,
         container: props.container.clone(),
-        ..Default::default()
+        root: props.folder.clone(),
     };
     html! {
         <div class={"flex flex-col gap-2"}>
@@ -73,11 +82,11 @@ pub fn blob_image_select(props: &BlobImageSelectProps) -> Html {
                 <img {src} class={"h-auto mx-auto"}/>
             </div>
             <div class={"w-full"}>
-                <div id={IMAGE_BROWSER_ID} tabindex={"0"} class={dropdown_class}>
+                <div id={(*id).clone()} tabindex={"0"} class={dropdown_class}>
                     <div class={"pl-2 truncate"}>{props.data.clone().unwrap_or_default()}</div>
                     <label class={"rounded-l-none btn btn-primary no-animation"} tabindex={"0"}>{locales_store.get(TK::Edit)}</label>
                     <div tabindex={"0"} class={"dropdown-content w-full flex flex-col mb-4 gap-1 z-10"}>
-                        <BlobBrowserDialog {config} ondatachanged={props.ondatachanged.clone()} {onforceopenchanged} />
+                        <BlobBrowserDialog parentid={(*id).clone()} {config} ondatachanged={props.ondatachanged.clone()} {onforceopenchanged} />
                     </div>
                 </div>
             </div>
@@ -94,6 +103,7 @@ pub struct BlobBrowserDialogConfig {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct BlobBrowserDialogProps {
+    pub parentid: String,
     pub config: BlobBrowserDialogConfig,
     pub ondatachanged: Callback<Option<String>>,
     pub onforceopenchanged: Callback<bool>,
@@ -102,6 +112,7 @@ pub struct BlobBrowserDialogProps {
 #[function_component(BlobBrowserDialog)]
 pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
+    let (blob_store, blob_dispatch) = use_store::<BlobStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let (_, modal_dispatch) = use_store::<ModalStore>();
     let container = props.config.container.clone();
@@ -112,22 +123,29 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
     let state = use_state(|| State::Ok(None));
     let dir_input_active = use_state(|| false);
     let onforceopenchanged = props.onforceopenchanged.clone();
-    use_event(
-        &web_sys::window().and_then(|w| w.document()).unwrap(),
-        "click",
-        move |e| {
-            if let Some(element) = web_sys::window()
-                .and_then(|w| w.document())
-                .and_then(|d| d.get_element_by_id(IMAGE_BROWSER_ID))
-            {
-                let node = e.target_dyn_into::<Node>();
-                if element.contains(node.as_ref()) {
-                    return;
+    {
+        let parentid = props.parentid.clone();
+        use_event(
+            &web_sys::window().and_then(|w| w.document()).unwrap(),
+            "click",
+            move |e| {
+                if let Some(element) = web_sys::window()
+                    .and_then(|w| w.document())
+                    .and_then(|d| d.get_element_by_id(parentid.as_str()))
+                {
+                    let node = e.target_dyn_into::<Node>();
+                    if element.contains(node.as_ref()) {
+                        return;
+                    }
                 }
-            }
-            onforceopenchanged.emit(false);
-        },
-    );
+                onforceopenchanged.emit(false);
+            },
+        );
+    }
+    {
+        let state = state.clone();
+        use_effect_with_deps(move |_| state.set(State::Ok(None)), blob_store)
+    }
     use_effect_with_deps(
         |(state, container, prefix)| {
             let state = state.clone();
@@ -164,17 +182,18 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
     );
     {
         let curr = curr.clone();
+        let parentid = props.parentid.clone();
         use_effect_with_deps(
-            |_| {
+            |(_, _, parentid)| {
                 if let Some(browser) = web_sys::window()
                     .and_then(|w| w.document())
-                    .and_then(|d| d.get_element_by_id(IMAGE_BROWSER_ID))
+                    .and_then(|d| d.get_element_by_id(parentid.as_str()))
                     .and_then(|e| e.dyn_into::<HtmlElement>().ok())
                 {
                     browser.focus().unwrap();
                 }
             },
-            (curr.clone(), selected.clone()),
+            (curr.clone(), selected.clone(), parentid.clone()),
         )
     }
     let onselectedchanged = {
@@ -296,13 +315,16 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
             dir_input_active.set(!*dir_input_active);
         })
     };
-    const DIR_INPUT_ID: &str = "dir-input";
+    let dir_id = use_memo(
+        |_| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
+        (),
+    );
     use_effect_with_deps(
-        |dir_input_active| {
+        |(dir_input_active, dir_id)| {
             if **dir_input_active {
                 if let Some(dir_input) = web_sys::window()
                     .and_then(|w| w.document())
-                    .and_then(|d| d.get_element_by_id(DIR_INPUT_ID))
+                    .and_then(|d| d.get_element_by_id(dir_id.as_str()))
                     .and_then(|e| e.dyn_into::<HtmlInputElement>().ok())
                 {
                     dir_input.focus().unwrap();
@@ -310,7 +332,7 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
                 }
             }
         },
-        dir_input_active.clone(),
+        (dir_input_active.clone(), dir_id.clone()),
     );
     let add_dir_onkeydown = {
         let curr = curr.clone();
@@ -336,6 +358,9 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
     let oninput = {
         let state = state.clone();
         let curr = curr.clone();
+        let prefix = prefix.clone();
+        let container = container.clone();
+        let blob_dispatch = blob_dispatch.clone();
         let session_store = session_store.clone();
         Callback::from(move |e: InputEvent| {
             let state = state.clone();
@@ -343,6 +368,7 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
             let prefix = prefix.clone();
             let container = container.clone();
             let session_store = session_store.clone();
+            let blob_dispatch = blob_dispatch.clone();
             let element = e.target_unchecked_into::<HtmlInputElement>();
             let img = element.files().unwrap().get(0).unwrap();
             state.set(State::Loading);
@@ -364,6 +390,7 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
                 match ApiClient::create_or_update(token.as_str(), &container, &upload).await {
                     Ok(_) => {
                         state.set(State::Ok(None));
+                        blob_dispatch.reduce_mut(|bs| bs.invalidate());
                     }
                     Err(e) => {
                         state.set(State::Err(e));
@@ -391,33 +418,45 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
         State::Ok(Some(paths)) => paths.len() == 1,
         _ => false,
     };
-    let delete_onclick =
-        async_event!(
-            |onforceopenchanged, selected, session_store, curr, state, go_up| {
-                let path = match &*selected {
-                    Some(BrowseItem::Dir(path) | BrowseItem::File(path)) => path,
-                    _ => return,
-                };
-                let token = session_store.token.clone().unwrap_or_default();
-                match ApiClient::delete(
-                    &token,
-                    "image-upload",
-                    (curr[1..].to_string() + path.as_str()).as_str(),
-                )
-                .await
-                {
-                    Ok(_) => {
-                        if go_up {
-                            curr.set("/".to_string());
-                        }
-                        state.set(State::Ok(None));
-                    }
-                    Err(e) => state.set(State::Err(e)),
+    let delete_onclick = async_event!(|onforceopenchanged,
+                                       selected,
+                                       session_store,
+                                       curr,
+                                       container,
+                                       prefix,
+                                       state,
+                                       go_up,
+                                       blob_dispatch| {
+        let path = match &*selected {
+            Some(BrowseItem::Dir(path) | BrowseItem::File(path)) => path,
+            _ => return,
+        };
+        let token = session_store.token.clone().unwrap_or_default();
+        match ApiClient::delete(
+            &token,
+            &container,
+            format!(
+                "{}{}{}",
+                prefix.unwrap_or_default(),
+                &curr.as_str()[1..],
+                path
+            )
+            .as_str(),
+        )
+        .await
+        {
+            Ok(_) => {
+                if go_up {
+                    curr.set("/".to_string());
                 }
-                selected.set(None);
-                onforceopenchanged.emit(false);
+                state.set(State::Ok(None));
+                blob_dispatch.reduce_mut(|bs| bs.invalidate());
             }
-        );
+            Err(e) => state.set(State::Err(e)),
+        }
+        selected.set(None);
+        onforceopenchanged.emit(false);
+    });
     let (title, message) = match &*selected {
         Some(BrowseItem::Dir(_)) => (
             locales_store.get(TK::DeleteDir),
@@ -502,7 +541,7 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
                 <div class={"flex flex-wrap gap-2 p-2 w-full lg:items-center"}>
                     <div class={"flex border rounded-md px-2 italic bg-base-100 grow"}>
                         <p class={"word-break"}>{&*curr}</p>
-                        <input id={DIR_INPUT_ID} enterkeyhint={"done"} placeholder={locales_store.get(TK::EnterDirname)} class={dir_input_class} onkeydown={add_dir_onkeydown}/>
+                        <input id={(*dir_id).clone()} enterkeyhint={"done"} placeholder={locales_store.get(TK::EnterDirname)} class={dir_input_class} onkeydown={add_dir_onkeydown}/>
                     </div>
                     <div class={"flex flex-row gap-2 justify-between"}>
                         {buttons}

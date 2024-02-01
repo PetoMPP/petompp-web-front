@@ -27,7 +27,6 @@ Activate: Activate
 ActivateUserQuestion: Do you want to activate user %{0}?
 Delete: Delete
 DeleteUserQuestion: Do you want to delete user %{0}?
-ProjectsDescription: This is where I will put my projects.
 Edit: Edit
 Editing: Editing
 Editor: Editor
@@ -57,6 +56,7 @@ Title: Title
 Summary: Summary
 Tags: Tags
 Image: Image
+Images: Images
 DeleteDir: Delete directory
 DeleteDirQuestion: Do you want to delete directory?
 EnterDirname: Enter directory name..
