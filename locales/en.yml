@@ -1,6 +1,5 @@
 __version: 1.0
 Home: Home
-Projects: Projects
 About: About
 Contact: Contact
 Loading: Loading
@@ -50,6 +49,10 @@ NewBlogPost: New blog post
 BlogPosts: Blog posts
 BlogPostMetadata: Blog post metadata
 BackToBlogPosts: "↩ back to posts.."
+Project: Project
+NewProject: New project
+Projects: Projects
+ProjectMetadata: Project metadata
 Title: Title
 Summary: Summary
 Tags: Tags

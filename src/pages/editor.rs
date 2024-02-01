@@ -1,5 +1,9 @@
 use crate::{
-    api::client::{ApiClient, RequestError},
+    api::{
+        client::{ApiClient, RequestError},
+        editor::EditorClient,
+        resource::ResourceClient,
+    },
     components::{
         atoms::{
             collapse::Collapse, loading::Loading, markdown::Editable,
@@ -12,6 +16,7 @@ use crate::{
             },
             markdown_editor::MarkdownEditor,
             markdown_preview::MarkdownPreview,
+            project::project_meta_editor::ProjectMetaEditor,
         },
         state::State,
     },
@@ -27,8 +32,8 @@ use crate::{
     router::route::Route,
     utils::style::get_svg_bg_mask_style,
 };
+use petompp_web_models::models::blob::{blog::BlogMetaData, project::ProjectMetaData};
 use petompp_web_models::models::country::Country;
-use petompp_web_models::models::{blog_data::BlogMetaData, project_data::ProjectMetaData};
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -135,42 +140,15 @@ pub fn editor() -> Html {
             spawn_local(async move {
                 // does current resource exist?
                 let (is_new, new_state) = match &resid {
-                    ResId::Blob(blob_type) => match blob_type {
-                        BlobType::Blog(id) => {
-                            match ApiClient::get_post_meta(id, lang.key()).await {
-                                Ok(m) => match resid.get_value(&lang).await {
-                                    Ok(v) => (false, Some(EditorData::Blog((v, m)))),
-                                    Err(e) => {
-                                        state.set(State::Err(e));
-                                        return;
-                                    }
-                                },
-                                // does it exist in another language?
-                                Err(RequestError::Endpoint(404, _)) => {
-                                    match ApiClient::get_posts_meta(Some(id.to_string())).await {
-                                        Ok(_) => (true, None),
-                                        Err(e) => match e {
-                                            // does it exist locally?
-                                            RequestError::Endpoint(404, _)
-                                                if cached_state.is_some() || any_cached_state =>
-                                            {
-                                                gloo::console::log!("cached");
-                                                (true, None)
-                                            }
-                                            _ => {
-                                                state.set(State::Err(e));
-                                                return;
-                                            }
-                                        },
-                                    }
-                                }
-                                Err(e) => {
-                                    state.set(State::Err(e));
-                                    return;
-                                }
+                    ResId::Blob(blob_type) => match ApiClient::get_data(blob_type, lang).await {
+                        Ok(ed) => (ed.is_none(), ed),
+                        Err(e) => match cached_state.is_some() || any_cached_state {
+                            true => (true, None),
+                            false => {
+                                state.set(State::Err(e));
+                                return;
                             }
-                        }
-                        BlobType::Project(_) => todo!(),
+                        },
                     },
                     ResId::ResKey(k) => match ApiClient::get_resource(k.as_str(), &lang).await {
                         Ok((c, v)) => match c == lang {
@@ -209,15 +187,20 @@ pub fn editor() -> Html {
                         })));
                     }
                     (None, None) => {
-                        let meta = match &resid {
-                            ResId::Blob(_) => Some(BlogMetaData::default()),
-                            _ => None,
+                        let data = match &resid {
+                            ResId::Blob(blob_type) => match blob_type {
+                                BlobType::Blog(id) => {
+                                    EditorData::Blog((String::new(), BlogMetaData::empty(id, lang)))
+                                }
+                                BlobType::Project(id) => EditorData::Project((
+                                    String::new(),
+                                    ProjectMetaData::empty(id, lang),
+                                )),
+                            },
+                            ResId::ResKey(_) => EditorData::Resource(String::new()),
                         };
                         state.set(State::Ok(Some(EditorDataState {
-                            data: match &resid {
-                                ResId::Blob(_) => EditorData::Blog((String::new(), meta.unwrap())),
-                                _ => EditorData::Resource(String::new()),
-                            },
+                            data,
                             id: (resid.clone(), lang),
                             is_new: Some(is_new),
                         })));
@@ -349,7 +332,23 @@ pub fn editor() -> Html {
                         </Collapse>
                     })
                 }
-                _ => None,
+                EditorData::Project((value, meta)) => {
+                    let ondatachanged = Callback::from(move |new_data: ProjectMetaData| {
+                        local_dispatch.reduce_mut(|store| {
+                            store.insert(
+                                resid.clone(),
+                                lang.key(),
+                                EditorData::Project((value.clone(), new_data)),
+                            )
+                        })
+                    });
+                    Some(html! {
+                        <Collapse label={locales_store.get(TK::ProjectMetadata)}>
+                            <ProjectMetaEditor data={meta.clone()} {ondatachanged} />
+                        </Collapse>
+                    })
+                }
+                EditorData::Resource(_) => None,
             }
         }
         State::Loading => {

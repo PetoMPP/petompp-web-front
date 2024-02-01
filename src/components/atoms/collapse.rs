@@ -9,7 +9,7 @@ pub struct CollapseProps {
 #[function_component(Collapse)]
 pub fn collapse(props: &CollapseProps) -> Html {
     html! {
-        <div class={"collapse collapse-arrow border shadow-lg"}>
+        <div class={"collapse has-[:checked]:overflow-visible collapse-arrow border shadow-lg"}>
             <input type={"checkbox"} />
             <div class={"collapse-title text-xl"}>
                 {&props.label}

@@ -1,4 +1,8 @@
-use crate::api::client::{ApiClient, BlobClient, RequestError};
+use crate::api::{
+    blob::BlobClient,
+    client::{ApiClient, RequestError},
+    resource::ResourceClient,
+};
 use petompp_web_models::models::country::Country;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
@@ -118,12 +122,13 @@ impl ResId {
             Self::ResKey(reskey) => ApiClient::get_resource(reskey.as_str(), lang)
                 .await
                 .map(|(_, v)| v),
-            Self::Blob(blob_type) => match blob_type {
-                BlobType::Blog(id) => {
-                    BlobClient::get_post_content(format!("{}/{}.md", id, lang.key()).as_str()).await
-                }
-                BlobType::Project(id) => todo!(),
-            },
+            Self::Blob(blob_type) => {
+                let (container, filename) = match blob_type {
+                    BlobType::Blog(id) => ("blog", id),
+                    BlobType::Project(id) => ("project", id),
+                };
+                ApiClient::get_content_str(container, filename).await
+            }
         }
     }
 }

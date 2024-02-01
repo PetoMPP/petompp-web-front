@@ -17,8 +17,6 @@ pub enum Route {
     Root,
     #[at("/home")]
     Home,
-    #[at("/projects")]
-    Projects,
     #[at("/about")]
     About,
     #[at("/contact")]
@@ -31,8 +29,12 @@ pub enum Route {
     Editor,
     #[at("/blog")]
     Blog,
-    #[at("/blog/post/:id")]
+    #[at("/blog/:id")]
     BlogPost { id: String },
+    #[at("/projects")]
+    Projects,
+    #[at("/project/:id")]
+    Project { id: String },
     // Admin routes
     #[at("/admin")]
     AdminRoot,
@@ -53,9 +55,10 @@ impl Route {
     pub fn switch(self) -> Html {
         match self {
             Route::Root | Route::Home => html! {<Home />},
-            Route::Projects => html! {<Projects />},
             Route::Blog => html! {<Blog />},
             Route::BlogPost { id } => html! {<BlogPost {id} />},
+            Route::Projects => html! {<Projects />},
+            Route::Project { id } => html! {},
             Route::About => html! {<About />},
             Route::Contact => html! {<Contact />},
             Route::Login => html! {<Login />},

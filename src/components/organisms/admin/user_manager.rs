@@ -1,5 +1,5 @@
 use crate::{
-    api::client::ApiClient,
+    api::{client::ApiClient, user::UserClient},
     async_event,
     components::{
         atoms::{

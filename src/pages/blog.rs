@@ -1,3 +1,4 @@
+use crate::api::blob::BlobClient;
 use crate::api::client::ApiClient;
 use crate::components::atoms::loading::Loading;
 use crate::components::state::State;
@@ -8,6 +9,7 @@ use crate::{
     components::{atoms::markdown::Editable, organisms::blog::blog_summary::BlogSummary},
     pages::page_base::PageBase,
 };
+use petompp_web_models::models::blob::blog::BlogMetaData;
 use petompp_web_models::models::tag::Tags;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -28,7 +30,7 @@ pub fn blog() -> Html {
                 _ => data.set(State::Loading),
             }
             spawn_local(async move {
-                match ApiClient::get_posts_meta(None).await {
+                match ApiClient::get_meta_all::<BlogMetaData>("blog", None).await {
                     Ok(posts) => data.set(State::Ok(Some(posts))),
                     Err(e) => data.set(State::Err(e)),
                 };
@@ -46,9 +48,9 @@ pub fn blog() -> Html {
                         || tags
                             .tags()
                             .iter()
-                            .any(|t| meta.blob.tags.tags().contains(t))
+                            .any(|t| meta.tags.tags().contains(t))
                 })
-                .filter(|meta| meta.blob.lang == locales_store.curr)
+                .filter(|meta| meta.lang() == locales_store.curr)
                 .map(|meta| {
                     html! {
                         <BlogSummary {meta}/>

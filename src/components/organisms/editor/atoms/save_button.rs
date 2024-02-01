@@ -1,15 +1,15 @@
 use crate::{
-    api::client::ApiClient,
+    api::{blob::BlobClient, client::ApiClient, resource::ResourceClient},
     async_event,
     components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
         locales::{store::LocalesStore, tk::TK},
-        resources::{id::ResId, store::LocalStore},
+        resources::store::LocalStore,
         session::SessionStore,
     },
     pages::editor::{EditorData, EditorProps, EditorState},
 };
-use petompp_web_models::models::blog_data::BlogData;
+use petompp_web_models::models::blob::blob_meta::{BlobMetaDto, BlobUpload};
 use yew::prelude::*;
 use yewdux::prelude::*;
 
@@ -40,18 +40,24 @@ pub fn save_button(props: &EditorProps) -> Html {
                 false => ApiClient::update_resource(&token, resid.id(), &lang, &value).await,
             },
             EditorData::Blog((value, meta)) => {
-                ApiClient::create_or_update_post(
-                    resid.id(),
-                    lang.key(),
-                    &token,
-                    &BlogData {
-                        meta: meta.clone(),
-                        content: value,
-                    },
-                )
-                .await
+                let upload = BlobUpload {
+                    meta: BlobMetaDto::from((**meta).clone()),
+                    content: value.into_bytes(),
+                };
+                gloo::console::log!(format!("{:?}", &upload.content));
+                ApiClient::create_or_update(&token, "blog", &upload)
+                    .await
+                    .map(|_| ())
             }
-            EditorData::Project((value, meta)) => todo!(),
+            EditorData::Project((value, meta)) => {
+                let upload = BlobUpload {
+                    meta: BlobMetaDto::from((**meta).clone()),
+                    content: value.into_bytes(),
+                };
+                ApiClient::create_or_update(&token, "project", &upload)
+                    .await
+                    .map(|_| ())
+            }
         } {
             Ok(_) => {
                 local_dispatch.reduce_mut(|store| store.remove(&resid, lang.key()));

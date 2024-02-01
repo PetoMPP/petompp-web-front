@@ -5,7 +5,6 @@ use strum::EnumIter;
 pub enum TK {
     __version,
     Home,
-    Projects,
     About,
     Contact,
     Loading,
@@ -55,6 +54,10 @@ pub enum TK {
     BlogPosts,
     BlogPostMetadata,
     BackToBlogPosts,
+    Project,
+    NewProject,
+    Projects,
+    ProjectMetadata,
     Title,
     Summary,
     Tags,

@@ -1,7 +1,7 @@
 use crate::pages::editor::EditorData;
 
 use super::id::ResId;
-use petompp_web_models::models::{blog_data::BlogMetaData, project_data::ProjectMetaData};
+use petompp_web_models::models::blob::{blog::BlogMetaData, project::ProjectMetaData};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, str::FromStr};
 use yewdux::prelude::*;

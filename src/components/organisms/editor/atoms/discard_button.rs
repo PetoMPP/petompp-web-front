@@ -1,9 +1,6 @@
 use crate::{
     async_event,
-    components::{
-        atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
-        state::State,
-    },
+    components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
     data::{
         locales::{store::LocalesStore, tk::TK},
         resources::store::LocalStore,
@@ -39,10 +36,7 @@ pub fn discard_button(props: &EditorProps) -> Html {
             local_dispatch.reduce_mut(|store| {
                 store.remove(&resid, lang.key());
             });
-            gloo::console::log!("Discard");
-            gloo::console::log!(is_new);
             if is_new.unwrap_or_default() {
-                gloo::console::log!("Discard new");
                 navigator.push(&Route::Editor);
             }
             onstatechanged.emit(EditorState::Ok(None));

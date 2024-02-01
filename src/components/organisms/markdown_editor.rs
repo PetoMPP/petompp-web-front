@@ -1,8 +1,10 @@
+use crate::api::blob::BlobClient;
 use crate::api::client::ApiClient;
 use crate::components::atoms::modal::show_error;
 use crate::pages::editor::EditorData;
 use crate::utils::js::{set_textarea_height, set_textarea_text};
 use crate::{api::client::RequestError, data::session::SessionStore};
+use petompp_web_models::models::blob::blob_meta::{BlobMetaDto, BlobUpload};
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{ClipboardEvent, HtmlInputElement};
@@ -113,16 +115,30 @@ fn send_file(
     onchanged: Callback<String>,
 ) {
     spawn_local(async move {
-        match ApiClient::upload_img(
+        let upload = match BlobUpload::from_file(&file).await {
+            Ok(upload) => BlobUpload {
+                meta: BlobMetaDto {
+                    filename: format!("{}/", UPLOAD_FOLDER),
+                    ..upload.meta
+                },
+                content: upload.content,
+            },
+            Err(e) => {
+                error_state.set(Some(RequestError::Network(e.to_string())));
+                return;
+            }
+        };
+        match ApiClient::create_or_update(
             session_store.token.as_deref().unwrap_or_default(),
-            file,
-            UPLOAD_FOLDER,
-            None,
+            "image-upload",
+            &upload,
         )
         .await
         {
-            Ok(url) => {
-                let Some(new_value) = insert_img_into_textarea(url.as_str()) else {
+            Ok(filename) => {
+                let Some(new_value) = insert_img_into_textarea(
+                    &<ApiClient as BlobClient>::get_url("image-upload", &filename),
+                ) else {
                     return;
                 };
                 onchanged.emit(new_value);

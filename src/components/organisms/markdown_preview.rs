@@ -25,8 +25,8 @@ pub fn markdown_preview(props: &MarkdownPreviewProps) -> Html {
         + location.host().unwrap().as_str()
         + match &props.data.id.0 {
             ResId::Blob(id) => match &id {
-                BlobType::Blog(s) => (Route::BlogPost { id: id.to_string() }).to_path(),
-                BlobType::Project(s) => todo!(),
+                BlobType::Blog(_) => (Route::BlogPost { id: id.to_string() }).to_path(),
+                BlobType::Project(_) => (Route::Project { id: id.to_string() }).to_path(),
             },
             ResId::ResKey(id) => "/".to_string() + id.trim_end_matches("-content"),
         }
