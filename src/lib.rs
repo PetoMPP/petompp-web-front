@@ -51,6 +51,7 @@ pub fn app() -> Html {
     let error_state = use_state(|| None);
     let (locale_store, locale_dispatch) = use_store::<LocalesStore>();
     if !locale_store.is_loaded(locale_store.curr) || error_state.is_some() {
+        let locale_store = locale_store.clone();
         let locale_dispatch = locale_dispatch.clone();
         spawn_local(async move {
             match LocalClient::get_locale(locale_store.curr.key()).await {
@@ -69,6 +70,12 @@ pub fn app() -> Html {
         },
         (),
     );
+    use_effect_with_deps(|curr| {
+        web_sys::window().unwrap().document().unwrap().document_element().unwrap().set_attribute(
+            "lang",
+            curr.key(),
+        ).unwrap();
+    }, locale_store.curr);
 
     html! {
         <BrowserRouter>

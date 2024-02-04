@@ -72,7 +72,7 @@ impl BlobClient for ApiClient {
         container: &str,
         prefix: Option<&str>,
     ) -> Result<Vec<TBlob>, RequestError> {
-        Self::send_json::<FullResp<TBlob>>(
+        Ok(Self::send_json::<FullResp<BlobMetaData>>(
             Method::GET,
             format!(
                 "api/v1/blob/{}?data=full{}",
@@ -84,7 +84,10 @@ impl BlobClient for ApiClient {
             Option::<&String>::None,
         )
         .await
-        .map(|r| r.full)
+        .map(|r| r.full)?
+        .into_iter()
+        .filter_map(|b| TBlob::try_from(b).ok())
+        .collect())
     }
     async fn get_names(container: &str, prefix: Option<&str>) -> Result<Vec<String>, RequestError> {
         Self::send_json::<NameResp>(

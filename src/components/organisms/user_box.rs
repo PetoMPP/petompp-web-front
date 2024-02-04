@@ -1,6 +1,6 @@
 use crate::{
     components::{
-        atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+        atoms::modal::{show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore},
         organisms::menu::close_menu,
     },
     data::{
@@ -68,14 +68,14 @@ fn logout_button() -> Html {
         session_dispatch.reduce(|_| SessionStore::default().into());
     });
     let onclick = show_modal_callback(
-        ModalData {
+        ModalData::Dialog(DialogData {
             title: locales_store.get(TK::Logout),
             message: locales_store.get(TK::LogoutQuestion),
             buttons: Buttons::RiskyCancel(
                 ModalButton::new(locales_store.get(TK::Logout), Some(onclick)),
                 ModalButton::new(locales_store.get(TK::Cancel), None),
             ),
-        },
+        }),
         dispatch,
     );
     html! {

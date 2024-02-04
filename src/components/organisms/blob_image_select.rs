@@ -7,7 +7,7 @@ use crate::{
     components::{
         atoms::{
             loading::Loading,
-            modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+            modal::{show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore},
         },
         state::State,
     },
@@ -469,14 +469,14 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
         None => (String::new(), String::new()),
     };
     let delete_onclick = enable_force_open.clone().merge(show_modal_callback(
-        ModalData {
+        ModalData::Dialog(DialogData {
             title,
             message,
             buttons: Buttons::RiskyCancel(
                 ModalButton::new(locales_store.get(TK::Delete), Some(delete_onclick)),
                 ModalButton::new(locales_store.get(TK::Cancel), Some(disable_force_open)),
             ),
-        },
+        }),
         modal_dispatch,
     ));
     let buttons = match &*state {
@@ -554,7 +554,7 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
                     </div>
                     <div class={"divider my-1 lg:divider-horizontal lg:mx-1 lg:my-auto h-auto"}/>
                     <div class={"border p-2 rounded-lg shadow-md w-full lg:max-w-[50%] max-h-full"}>
-                        <img class={"m-auto lg:h-full h-24"} {src} onclick={img_onclick}/>
+                        <img class={"m-auto lg:h-full h-24 cursor-pointer"} {src} onclick={img_onclick}/>
                     </div>
                 </div>
                 {ok_cancel_buttons}

@@ -1,8 +1,9 @@
 use deref_derive::{Deref, DerefMut};
+use std::time::Duration;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlDialogElement;
-use yew::prelude::*;
+use yew::{platform::spawn_local, prelude::*};
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
@@ -43,25 +44,46 @@ impl Default for Buttons {
 #[derive(PartialEq, Clone, Store, Default, Deref, DerefMut)]
 pub struct ModalStore(pub ModalData);
 
+#[derive(PartialEq, Clone)]
+pub enum ModalData {
+    Dialog(DialogData),
+    Image(ImageData),
+}
+
+impl Default for ModalData {
+    fn default() -> Self {
+        Self::Dialog(DialogData::default())
+    }
+}
+
 #[derive(PartialEq, Clone, Default)]
-pub struct ModalData {
+pub struct DialogData {
     pub title: String,
     pub message: String,
     pub buttons: Buttons,
+}
+
+#[derive(PartialEq, Clone, Default)]
+pub struct ImageData {
+    pub src: String,
+    pub title: String,
 }
 
 const MODAL_ID: &str = "modal";
 
 pub fn show_modal(data: ModalData, dispatch: Dispatch<ModalStore>) {
     dispatch.reduce(|_| ModalStore(data).into());
-    let modal: HtmlDialogElement = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .get_element_by_id(MODAL_ID)
-        .unwrap()
-        .unchecked_into();
-    modal.show_modal().unwrap();
+    spawn_local(async move {
+        async_std::task::sleep(Duration::from_millis(50)).await;
+        let modal: HtmlDialogElement = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .get_element_by_id(MODAL_ID)
+            .unwrap()
+            .unchecked_into();
+        modal.show_modal().unwrap();
+    });
 }
 
 pub fn show_modal_callback<T>(data: ModalData, dispatch: Dispatch<ModalStore>) -> Callback<T> {
@@ -79,16 +101,74 @@ pub struct ModalProps {
 #[function_component(Modal)]
 pub fn modal() -> Html {
     let (store, _) = use_store::<ModalStore>();
+    match store.0.clone() {
+        ModalData::Dialog(data) => {
+            html! {
+                <DialogModal title={data.title} message={data.message} buttons={data.buttons} />
+            }
+        }
+        ModalData::Image(data) => {
+            html! {
+                <ImageModal src={data.src} title={data.title} />
+            }
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+struct DialogModalProps {
+    pub title: String,
+    pub message: String,
+    pub buttons: Buttons,
+}
+
+#[function_component(DialogModal)]
+fn dialog_modal(props: &DialogModalProps) -> Html {
     html! {
         <>
         <dialog id={MODAL_ID} class={"modal z-80"}>
         <form method={"dialog"} class={"modal-box"}>
-            <h3 class={"font-bold text-lg"}>{&store.title}</h3>
-            <p class={"py-4"}>{&store.message}</p>
+            <h3 class={"font-bold text-lg"}>{&props.title}</h3>
+            <p class={"py-4"}>{&props.message}</p>
             <div class={"flex flex-row-reverse justify-between"}>
-                {get_buttons(&store.buttons)}
+                {get_buttons(&props.buttons)}
             </div>
         </form>
+        </dialog>
+        </>
+    }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+struct ImageModalProps {
+    pub src: String,
+    pub title: String,
+}
+
+#[function_component(ImageModal)]
+fn image_modal(props: &ImageModalProps) -> Html {
+    let onclick = {
+        let src = props.src.clone();
+        Callback::from(move |_| {
+            web_sys::window()
+                .unwrap()
+                .open_with_url(&src)
+                .unwrap()
+                .unwrap();
+        })
+    };
+    html! {
+        <>
+        <dialog id={MODAL_ID} class={"modal z-80 outline-none"}>
+            <div class={"p-4 bg-base-100 rounded-xl relative"}>
+                <img {onclick} class={"w-full cursor-pointer max-w-[90vw] max-h-[90vh]"} src={props.src.clone()}/>
+                    <div class={"font-bold bg-opacity-50 p-2 bg-base-100 rounded-lg text-lg absolute w-[fit-content] mx-auto bottom-6 left-0 right-0"}>
+                    <h3>{&props.title}</h3>
+                </div>
+            </div>
+            <form method={"dialog"} class={"absolute modal-backdrop h-[100lvh] w-[100vw] outline-none"}>
+                <button class={"outline-none"}>{"close"}</button>
+            </form>
         </dialog>
         </>
     }

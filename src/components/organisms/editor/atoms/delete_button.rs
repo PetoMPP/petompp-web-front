@@ -5,7 +5,9 @@ use crate::{
         resource::ResourceClient,
     },
     async_event,
-    components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+    components::atoms::modal::{
+        show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore,
+    },
     data::{
         locales::{store::LocalesStore, tk::TK},
         resources::id::{BlobType, ResId},
@@ -59,14 +61,14 @@ pub fn delete_button(props: &EditorProps) -> Html {
         }
     });
     let onclick = show_modal_callback(
-        ModalData {
+        ModalData::Dialog(DialogData {
             title: locales_store.get(TK::DeleteResource),
             message: locales_store.get(TK::DeleteResourceQuestion),
             buttons: Buttons::RiskyCancel(
                 ModalButton::new(locales_store.get(TK::Delete), Some(onclick)),
                 ModalButton::new(locales_store.get(TK::Cancel), None),
             ),
-        },
+        }),
         modal_dispatch.clone(),
     );
     html! {
