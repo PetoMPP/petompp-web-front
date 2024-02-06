@@ -1,7 +1,8 @@
 use crate::{
     pages::{
         about::About, blog::Blog, blog_post::BlogPost, contact::Contact, editor::Editor,
-        home::Home, login::Login, not_found::NotFound, projects::Projects, register::Register,
+        home::Home, login::Login, not_found::NotFound, project::Project, projects::Projects,
+        register::Register,
     },
     router::admin::AdminRoute,
 };
@@ -58,7 +59,7 @@ impl Route {
             Route::Blog => html! {<Blog />},
             Route::BlogPost { id } => html! {<BlogPost {id} />},
             Route::Projects => html! {<Projects />},
-            Route::Project { id } => html! {},
+            Route::Project { id } => html! {<Project {id} />},
             Route::About => html! {<About />},
             Route::Contact => html! {<Contact />},
             Route::Login => html! {<Login />},

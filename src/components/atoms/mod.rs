@@ -9,3 +9,4 @@ pub mod markdown;
 pub mod modal;
 pub mod resource_select;
 pub mod text_input;
+pub mod carousel;

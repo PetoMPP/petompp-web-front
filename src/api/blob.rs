@@ -84,7 +84,10 @@ impl BlobClient for ApiClient {
             Option::<&String>::None,
         )
         .await
-        .map(|r| r.full)?
+        .map(|mut r| {
+            r.full.sort_by(|a, b| a.filename.cmp(&b.filename));
+            r.full
+        })?
         .into_iter()
         .filter_map(|b| TBlob::try_from(b).ok())
         .collect())
@@ -102,7 +105,10 @@ impl BlobClient for ApiClient {
             Option::<&String>::None,
         )
         .await
-        .map(|r| r.name)
+        .map(|mut r| {
+            r.name.sort();
+            r.name
+        })
     }
     async fn get_content(container: &str, filename: &str) -> Result<Vec<u8>, RequestError> {
         let response = &Request::new(Self::get_url(container, filename).as_str())

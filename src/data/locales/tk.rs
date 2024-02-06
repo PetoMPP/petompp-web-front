@@ -56,6 +56,7 @@ pub enum TK {
     Project,
     NewProject,
     Projects,
+    AllProjects,
     ProjectMetadata,
     Title,
     Summary,

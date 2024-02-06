@@ -95,7 +95,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
             <a class={"lg:mb-6 mb-4"} href={"javascript:void(0);"} {onclick}>{locales_store.get(TK::BackToBlogPosts)}</a>
             {meta}
             <div class={"divider"}/>
-            <div class={"mx-auto prose flex flex-col w-full"}>
+            <div class={"mx-auto flex flex-col w-full"}>
                 {markdown}
             </div>
         </PageBase>
