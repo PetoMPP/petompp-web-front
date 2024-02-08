@@ -272,7 +272,7 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
             format!(
                 "{}{}{}",
                 prefix.clone().unwrap_or_default(),
-                curr[1..].to_string(),
+                &curr[1..],
                 name
             )
             .as_str(),

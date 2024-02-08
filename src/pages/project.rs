@@ -66,7 +66,11 @@ pub fn project(props: &ProjectProps) -> Html {
             m.title().clone(),
             html! {<ProjectGallery id={props.id.clone()} />},
         ),
-        State::Loading | State::Ok(None) => (html! { <Loading /> }, locales_store.get(TK::Loading), html! {}),
+        State::Loading | State::Ok(None) => (
+            html! { <Loading /> },
+            locales_store.get(TK::Loading),
+            html! {},
+        ),
         State::Err(RequestError::Endpoint(404, _)) => {
             navigator.push(&Route::Projects);
             return html! {};

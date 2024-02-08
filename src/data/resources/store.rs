@@ -67,7 +67,7 @@ impl LocalStore {
         key.to_string() + "." + lang
     }
 
-    fn key_lang(key: &String) -> Option<(ResId, &str)> {
+    fn key_lang(key: &str) -> Option<(ResId, &str)> {
         let x = key
             .split('.')
             .fold((0usize, 0), |acc, x| (acc.0 + x.len() + 1, x.len()));

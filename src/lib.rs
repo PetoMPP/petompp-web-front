@@ -70,12 +70,19 @@ pub fn app() -> Html {
         },
         (),
     );
-    use_effect_with_deps(|curr| {
-        web_sys::window().unwrap().document().unwrap().document_element().unwrap().set_attribute(
-            "lang",
-            curr.key(),
-        ).unwrap();
-    }, locale_store.curr);
+    use_effect_with_deps(
+        |curr| {
+            web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .document_element()
+                .unwrap()
+                .set_attribute("lang", curr.key())
+                .unwrap();
+        },
+        locale_store.curr,
+    );
 
     html! {
         <BrowserRouter>

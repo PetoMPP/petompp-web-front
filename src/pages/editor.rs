@@ -121,8 +121,8 @@ pub fn editor() -> Html {
                 // we already know that the resource exists or not, no need to call api
                 State::Ok(Some(data_state))
                     if data_state.is_new.is_some()
-                        && &data_state.id.0 == &resid
-                        && &data_state.id.1 == &lang =>
+                        && data_state.id.0 == resid
+                        && data_state.id.1 == lang =>
                 {
                     if let Some(local_value) = &cached_state {
                         if &data_state.data != local_value {
@@ -226,7 +226,7 @@ pub fn editor() -> Html {
                     let onchanged = {
                         let local_dispatch = local_dispatch.clone();
                         let resid = resid.clone();
-                        let lang = lang.clone();
+                        let lang = lang;
                         Callback::from(move |data: EditorData| {
                             local_dispatch
                                 .reduce_mut(|store| store.insert(resid.clone(), lang.key(), data));

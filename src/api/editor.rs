@@ -30,7 +30,7 @@ impl EditorClient for ApiClient {
         token: &str,
     ) -> Result<(Vec<ResId>, Vec<ResId>, Vec<ResId>), RequestError> {
         let (res_keys, blog_posts, projects) = futures::join!(
-            Self::get_resource_keys(&token),
+            Self::get_resource_keys(token),
             Self::get_meta_all::<BlogMetaData>("blog", None),
             Self::get_meta_all::<ProjectMetaData>("project", None)
         );
@@ -42,7 +42,7 @@ impl EditorClient for ApiClient {
         projects.sort_by(|a, b| a.filename.cmp(&b.filename));
         projects.dedup_by_key(|p| p.id().to_string());
         Ok((
-            res_keys.into_iter().map(|k| ResId::ResKey(k)).collect(),
+            res_keys.into_iter().map(ResId::ResKey).collect(),
             blog_posts
                 .into_iter()
                 .map(|b| ResId::Blob(BlobType::Blog(b.id().to_string())))

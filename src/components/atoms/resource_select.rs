@@ -407,7 +407,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     };
     use_effect_with_deps(
         |new_element_input| {
-            if &**new_element_input != &State::Ok(true) {
+            if **new_element_input != State::Ok(true) {
                 return;
             }
             if let Some(input) = web_sys::window()

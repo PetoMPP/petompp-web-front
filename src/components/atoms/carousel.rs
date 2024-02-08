@@ -34,7 +34,7 @@ pub fn carousel(props: &CarouselProps) -> Html {
         |_| {
             format!(
                 "#{}",
-                web_sys::window().unwrap().crypto().unwrap().random_uuid()[..8].to_string()
+                &web_sys::window().unwrap().crypto().unwrap().random_uuid()[..8]
             )
         },
         (),

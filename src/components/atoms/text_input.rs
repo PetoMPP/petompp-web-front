@@ -67,12 +67,7 @@ pub fn text_input(props: &TextInputProps) -> Html {
                     .and_then(|d| d.get_element_by_id(id.as_str()))
                     .and_then(|e| e.dyn_into::<HtmlInputElement>().ok())
                 {
-                    input.set_value(
-                        initial_state
-                            .as_ref()
-                            .map(|s| s.as_str())
-                            .unwrap_or_default(),
-                    );
+                    input.set_value(initial_state.as_deref().unwrap_or_default());
                 }
             },
             (),
@@ -138,15 +133,7 @@ pub fn textarea_input(props: &TextareaInputProps) -> Html {
         let id = id.clone();
         let initial_state = props.value.clone();
         use_effect_with_deps(
-            move |_| {
-                set_textarea_text(
-                    initial_state
-                        .as_ref()
-                        .map(|s| s.as_str())
-                        .unwrap_or_default(),
-                    &id,
-                )
-            },
+            move |_| set_textarea_text(initial_state.as_deref().unwrap_or_default(), &id),
             (),
         );
     }
