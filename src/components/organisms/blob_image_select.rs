@@ -29,6 +29,7 @@ use yewdux::prelude::*;
 #[derive(Clone, Properties, PartialEq)]
 pub struct BlobImageSelectProps {
     pub container: String,
+    pub id: Option<String>,
     pub folder: Option<String>,
     pub data: Option<String>,
     pub ondatachanged: Callback<Option<String>>,
@@ -38,8 +39,12 @@ pub struct BlobImageSelectProps {
 pub fn blob_image_select(props: &BlobImageSelectProps) -> Html {
     let (locales_store, _) = use_store::<LocalesStore>();
     let id = use_memo(
-        |_| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
-        (),
+        |id| {
+            id.clone().unwrap_or(
+                web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
+            )
+        },
+        props.id.clone(),
     );
     let force_open = use_state(|| false);
     let src = <ApiClient as BlobClient>::get_url(

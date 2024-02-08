@@ -14,8 +14,8 @@ use crate::{
             editor::atoms::{
                 delete_button::DeleteButton, discard_button::DiscardButton, save_button::SaveButton,
             },
-            markdown_editor::MarkdownEditor,
-            markdown_preview::MarkdownPreview,
+            markdown::markdown_editor::MarkdownEditor,
+            markdown::markdown_preview::MarkdownPreview,
             project::project_meta_editor::ProjectMetaEditor,
         },
         state::State,
@@ -233,9 +233,7 @@ pub fn editor() -> Html {
                         })
                     };
                     html! {
-                    <div class={"border border-2 border-base-300 rounded-2xl p-2 shadow-2xl"}>
                         <MarkdownEditor state={state.data.clone()} {onchanged}/>
-                    </div>
                     }
                 }
             };

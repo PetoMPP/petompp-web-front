@@ -26,6 +26,7 @@ pub struct TextInputProps {
     pub label: String,
     pub itype: InputType,
     pub enabled: bool,
+    pub id: Option<String>,
     pub value: Option<String>,
     pub placeholder: Option<String>,
     pub autocomplete: Option<String>,
@@ -36,8 +37,12 @@ pub struct TextInputProps {
 #[function_component(TextInput)]
 pub fn text_input(props: &TextInputProps) -> Html {
     let id = use_memo(
-        |_| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
-        (),
+        |id| {
+            id.clone().unwrap_or(
+                web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
+            )
+        },
+        props.id.clone(),
     );
     let (class, tooltip_class) = match &props.error {
         Some(_) => (

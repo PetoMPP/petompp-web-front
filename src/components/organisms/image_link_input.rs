@@ -11,6 +11,7 @@ use yewdux::prelude::*;
 #[derive(Clone, Properties, PartialEq)]
 pub struct ImageLinkEditorProps {
     pub container: String,
+    pub id: Option<String>,
     pub folder: Option<String>,
     pub data: Option<String>,
     pub ondatachanged: Callback<String>,
@@ -36,7 +37,7 @@ pub fn image_link_input(props: &ImageLinkEditorProps) -> Html {
     };
     html! {
         <Label label={locales_store.get(TK::Image)} error={false}>
-            <BlobImageSelect container={props.container.clone()} folder={props.folder.clone()} data={props.data.clone()} {ondatachanged} />
+            <BlobImageSelect id={props.id.clone()} container={props.container.clone()} folder={props.folder.clone()} data={props.data.clone()} {ondatachanged} />
         </Label>
     }
 }

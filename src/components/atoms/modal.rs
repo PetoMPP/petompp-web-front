@@ -2,12 +2,16 @@ use deref_derive::{Deref, DerefMut};
 use std::time::Duration;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::HtmlDialogElement;
+use web_sys::{HtmlDialogElement, HtmlElement};
 use yew::{platform::spawn_local, prelude::*};
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
+    components::{
+        atoms::text_input::{InputType, TextInput},
+        organisms::blob_image_select::BlobImageSelect,
+    },
     data::locales::{store::LocalesStore, tk::TK},
     router::route::Route,
     utils::ext::Mergable,
@@ -47,7 +51,9 @@ pub struct ModalStore(pub ModalData);
 #[derive(PartialEq, Clone)]
 pub enum ModalData {
     Dialog(DialogData),
+    Form(FormData),
     Image(ImageData),
+    ImageSelector(Buttons),
 }
 
 impl Default for ModalData {
@@ -61,6 +67,19 @@ pub struct DialogData {
     pub title: String,
     pub message: String,
     pub buttons: Buttons,
+}
+
+#[derive(PartialEq, Clone, Default)]
+pub struct FormData {
+    pub title: String,
+    pub fields: Vec<FormField>,
+    pub buttons: Buttons,
+}
+
+#[derive(PartialEq, Clone, Default)]
+pub struct FormField {
+    pub label: String,
+    pub required: bool,
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -103,15 +122,15 @@ pub fn modal() -> Html {
     let (store, _) = use_store::<ModalStore>();
     match store.0.clone() {
         ModalData::Dialog(data) => {
-            html! {
-                <DialogModal title={data.title} message={data.message} buttons={data.buttons} />
-            }
+            html! {<DialogModal title={data.title} message={data.message} buttons={data.buttons}/>}
+        }
+        ModalData::Form(data) => {
+            html! {<FormModal title={data.title} fields={data.fields} buttons={data.buttons}/>}
         }
         ModalData::Image(data) => {
-            html! {
-                <ImageModal src={data.src} title={data.title} />
-            }
+            html! {<ImageModal src={data.src} title={data.title}/>}
         }
+        ModalData::ImageSelector(buttons) => html! {<ImageSelectorModal {buttons}/>},
     }
 }
 
@@ -125,7 +144,6 @@ struct DialogModalProps {
 #[function_component(DialogModal)]
 fn dialog_modal(props: &DialogModalProps) -> Html {
     html! {
-        <>
         <dialog id={MODAL_ID} class={"modal z-80"}>
         <form method={"dialog"} class={"modal-box"}>
             <h3 class={"font-bold text-lg"}>{&props.title}</h3>
@@ -135,7 +153,72 @@ fn dialog_modal(props: &DialogModalProps) -> Html {
             </div>
         </form>
         </dialog>
-        </>
+    }
+}
+
+pub const MODAL_FIELD_PREFIX: &str = "modal-form-field-";
+
+#[derive(Clone, PartialEq, Properties)]
+struct FormModalProps {
+    pub title: String,
+    pub fields: Vec<FormField>,
+    pub buttons: Buttons,
+}
+
+#[function_component(FormModal)]
+fn form_modal(props: &FormModalProps) -> Html {
+    let fields = props.fields.clone().into_iter().map(|f| {
+        html! {
+            <TextInput itype={InputType::Text} enabled={true} id={Some(format!("{}{}", MODAL_FIELD_PREFIX, &f.label))} label={f.label} />
+        }
+    });
+    html! {
+        <dialog id={MODAL_ID} class={"modal z-80"}>
+        <form method={"dialog"} class={"modal-box overflow-visible"}>
+            <h3 class={"font-bold text-lg"}>{&props.title}</h3>
+            <div class={"py-4"}>
+                {for fields}
+            </div>
+            <div class={"flex flex-row-reverse justify-between"}>
+                {get_buttons(&props.buttons)}
+            </div>
+        </form>
+        </dialog>
+    }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+struct ImageSelectorModalProps {
+    pub buttons: Buttons,
+}
+
+#[function_component(ImageSelectorModal)]
+fn image_selector_modal(props: &ImageSelectorModalProps) -> Html {
+    let data = use_state(|| None);
+    let ondatachanged = {
+        let data = data.clone();
+        Callback::from(move |src: Option<String>| {
+            data.set(src);
+            web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .get_element_by_id(MODAL_ID)
+                .unwrap()
+                .unchecked_into::<HtmlElement>()
+                .focus()
+                .unwrap();
+        })
+    };
+    html! {
+        <dialog id={MODAL_ID} class={"modal z-80 items-end pb-6 lg:items-center"}>
+            <div class={"modal-box overflow-visible flex flex-col gap-2"}>
+                <BlobImageSelect id={format!("{}src", MODAL_FIELD_PREFIX)} container={"image-upload".to_string()} {ondatachanged} data={(*data).clone()}/>
+                <div class={"flex flex-row-reverse justify-between"}>
+                    {get_buttons(&props.buttons)}
+                </div>
+            </div>
+        </dialog>
     }
 }
 
