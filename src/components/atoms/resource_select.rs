@@ -1,5 +1,5 @@
 use crate::{
-    api::client::ApiClient,
+    api::{client::ApiClient, editor::EditorClient},
     components::{
         atoms::{flag::FlagSelect, loading::Loading},
         state::State,
@@ -7,14 +7,17 @@ use crate::{
     data::{
         locales::{store::LocalesStore, tk::TK},
         resources::{
-            id::{ResId, ResourceId},
+            id::{BlobType, ResId, ResourceId},
             store::LocalStore,
         },
         session::SessionStore,
     },
-    pages::editor::EditorState,
+    pages::editor::{EditorData, EditorState},
 };
-use petompp_web_models::models::{blog_data::BlogMetaData, country::Country};
+use petompp_web_models::models::{
+    blob::{blog::BlogMetaData, project::ProjectMetaData},
+    country::Country,
+};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::{platform::spawn_local, prelude::*};
@@ -31,14 +34,16 @@ pub struct ResourceSelectProps {
 #[derive(Debug, Clone, PartialEq)]
 enum Mode {
     Resources,
-    Posts,
+    Blogs,
+    Projects,
 }
 
 impl From<&ResId> for Mode {
     fn from(resid: &ResId) -> Self {
         match resid {
             ResId::ResKey(_) => Self::Resources,
-            ResId::Blob(_) => Self::Posts,
+            ResId::Blob(BlobType::Blog(_)) => Self::Blogs,
+            ResId::Blob(BlobType::Project(_)) => Self::Projects,
         }
     }
 }
@@ -46,10 +51,18 @@ impl From<&ResId> for Mode {
 impl Mode {
     fn next(&self) -> Self {
         match self {
-            Self::Resources => Self::Posts,
-            Self::Posts => Self::Resources,
+            Self::Resources => Self::Blogs,
+            Self::Blogs => Self::Projects,
+            Self::Projects => Self::Resources,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct ResourceSelectState {
+    resources: (Vec<ResId>, Vec<ResId>),
+    blogs: (Vec<ResId>, Vec<ResId>),
+    projects: (Vec<ResId>, Vec<ResId>),
 }
 
 #[function_component(ResourceSelect)]
@@ -58,50 +71,62 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
     let (local_store, _) = use_store::<LocalStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let token = session_store.token.clone().unwrap_or_default();
-    let data = use_state(|| State::Ok(None));
+    let state = use_state(|| State::Ok(None));
     let last_state = use_state(|| None);
     use_effect_with_deps(
-        |(data, token, state, last_state, local_store)| {
-            match (state, &**last_state) {
+        |(state, token, editor_state, last_editor_state, local_store)| {
+            match (editor_state, &**last_editor_state) {
                 (Some(State::Ok(Some(_))), Some(State::Ok(Some(_))))
                 | (Some(State::Ok(None)), Some(State::Ok(None)))
                 | (Some(State::Loading), Some(State::Loading)) => return,
-                _ => last_state.set(state.clone()),
+                _ => last_editor_state.set(editor_state.clone()),
             }
-            let data = data.clone();
-            match &*data {
+            let state = state.clone();
+            match &*state {
                 State::Ok(Some(_)) => {}
                 State::Loading | State::Err(_) => return,
-                _ => data.set(State::Loading),
+                _ => state.set(State::Loading),
             };
             let mut cached_res = Vec::new();
-            let mut cached_posts = Vec::new();
+            let mut cached_blogs = Vec::new();
+            let mut cached_projects = Vec::new();
             for resid in local_store.get_all_resids() {
-                match resid {
+                match &resid {
                     ResId::ResKey(_) => cached_res.push(resid),
-                    ResId::Blob(_) => cached_posts.push(resid),
+                    ResId::Blob(bt) => match bt {
+                        BlobType::Blog(_) => cached_blogs.push(resid),
+                        BlobType::Project(_) => cached_projects.push(resid),
+                    },
                 }
             }
             let token = token.clone();
             spawn_local(async move {
                 match ApiClient::get_res_ids(token.as_str()).await {
-                    Ok((res, ps)) => {
+                    Ok((res, bl, prj)) => {
                         let cached_res: Vec<_> = cached_res
                             .into_iter()
                             .filter(|r| !res.contains(r))
                             .collect();
-                        let cached_posts: Vec<_> = cached_posts
+                        let cached_blogs: Vec<_> = cached_blogs
                             .into_iter()
-                            .filter(|r| !ps.contains(r))
+                            .filter(|r| !bl.contains(r))
                             .collect();
-                        data.set(State::Ok(Some(((res, cached_res), (ps, cached_posts)))));
+                        let cached_projects: Vec<_> = cached_projects
+                            .into_iter()
+                            .filter(|r| !prj.contains(r))
+                            .collect();
+                        state.set(State::Ok(Some(ResourceSelectState {
+                            resources: (res, cached_res),
+                            blogs: (bl, cached_blogs),
+                            projects: (prj, cached_projects),
+                        })));
                     }
-                    Err(e) => data.set(State::Err(e)),
+                    Err(e) => state.set(State::Err(e)),
                 }
             });
         },
         (
-            data.clone(),
+            state.clone(),
             token,
             props.state.clone(),
             last_state.clone(),
@@ -124,10 +149,12 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
                 .emit(ResourceId::from((props.resid.clone().unwrap(), c)))
         })
     };
-    let list = match (*data).clone() {
-        State::Ok(Some((resources, posts))) => {
+    let list = match (*state).clone() {
+        State::Ok(Some(state)) => {
             html! {
-                <ResourceList currentresid={props.resid.clone()} currentlang={props.lang} {resources} {posts} onselectedchanged={onselectedchanged_resid}/>
+                <ResourceList currentresid={props.resid.clone()} currentlang={props.lang}
+                    resources={state.resources} blogs={state.blogs} projects={state.projects}
+                    onselectedchanged={onselectedchanged_resid}/>
             }
         }
         State::Ok(None) | State::Loading => html! {
@@ -137,6 +164,7 @@ pub fn resource_select(props: &ResourceSelectProps) -> Html {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
                 return redirect;
             }
+            gloo::console::error!(e.to_string());
             html! {
                 <div class={"btn btn-warning pointer-events-none"}>{locales_store.get(TK::ErrorOccured)}</div>
             }
@@ -166,7 +194,8 @@ struct ResourceListProps {
     pub currentresid: Option<ResId>,
     pub currentlang: Option<Country>,
     pub resources: (Vec<ResId>, Vec<ResId>),
-    pub posts: (Vec<ResId>, Vec<ResId>),
+    pub blogs: (Vec<ResId>, Vec<ResId>),
+    pub projects: (Vec<ResId>, Vec<ResId>),
     pub onselectedchanged: Callback<ResId>,
 }
 
@@ -183,6 +212,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     });
     let res_page = use_state_eq(|| 0);
     let blog_page = use_state_eq(|| 0);
+    let proj_page = use_state_eq(|| 0);
     let onclick = {
         let mode = mode.clone();
         Callback::from(move |_| mode.set(mode.next()))
@@ -234,16 +264,29 @@ fn resource_list(props: &ResourceListProps) -> Html {
                     .collect::<Vec<_>>(),
             ),
         ),
-        Mode::Posts => (
+        Mode::Blogs => (
             locales_store.get(TK::BlogPosts),
             blog_page,
             vec_into_elements(
                 props
-                    .posts
+                    .blogs
                     .0
                     .iter()
                     .map(|r| (r, false))
-                    .chain(props.posts.1.iter().map(|r| (r, true)))
+                    .chain(props.blogs.1.iter().map(|r| (r, true)))
+                    .collect::<Vec<_>>(),
+            ),
+        ),
+        Mode::Projects => (
+            locales_store.get(TK::Projects),
+            proj_page,
+            vec_into_elements(
+                props
+                    .projects
+                    .0
+                    .iter()
+                    .map(|r| (r, false))
+                    .chain(props.projects.1.iter().map(|r| (r, true)))
                     .collect::<Vec<_>>(),
             ),
         ),
@@ -266,7 +309,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
                 let new_element_input = new_element_input.clone();
                 let onselectedchanged = props.onselectedchanged.clone();
                 let mode = mode.clone();
-                let currlang = props.currentlang;
+                let currlang = props.currentlang.unwrap_or_default();
                 let token = session_store.token.clone();
                 Callback::from(move |e: KeyboardEvent| {
                     if e.key() != "Enter" {
@@ -285,17 +328,32 @@ fn resource_list(props: &ResourceListProps) -> Html {
                     new_element_input.set(State::Loading);
                     spawn_local(async move {
                         match ApiClient::get_res_ids(token.unwrap_or_default().as_str()).await {
-                            Ok((res, pos)) => {
-                                let (resid, meta, exists) = match *mode {
+                            Ok((res, bl, prj)) => {
+                                let (resid, data, exists) = match *mode {
                                     Mode::Resources => {
                                         let resid = ResId::ResKey(id);
                                         let contains = res.contains(&resid);
-                                        (resid, None, contains)
+                                        (resid, EditorData::Resource(Default::default()), contains)
                                     }
-                                    Mode::Posts => {
-                                        let resid = ResId::Blob(id);
-                                        let contains = pos.contains(&resid);
-                                        (resid, Some(BlogMetaData::default()), contains)
+                                    Mode::Blogs => {
+                                        let meta = BlogMetaData::empty(&id, currlang);
+                                        let resid = ResId::Blob(BlobType::Blog(id));
+                                        let contains = bl.contains(&resid);
+                                        (
+                                            resid,
+                                            EditorData::Blog((Default::default(), meta)),
+                                            contains,
+                                        )
+                                    }
+                                    Mode::Projects => {
+                                        let meta = ProjectMetaData::empty(&id, currlang);
+                                        let resid = ResId::Blob(BlobType::Project(id));
+                                        let contains = prj.contains(&resid);
+                                        (
+                                            resid,
+                                            EditorData::Project((Default::default(), meta)),
+                                            contains,
+                                        )
                                     }
                                 };
                                 if !exists {
@@ -303,12 +361,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
                                         if s.exists(&resid) {
                                             return;
                                         }
-                                        s.insert(
-                                            resid.clone(),
-                                            currlang.unwrap_or_default().key(),
-                                            String::new(),
-                                            meta.clone(),
-                                        );
+                                        s.insert(resid.clone(), currlang.key(), data);
                                     });
                                 }
                                 onselectedchanged.emit(resid);
@@ -336,7 +389,8 @@ fn resource_list(props: &ResourceListProps) -> Html {
         State::Ok(false) => html! {{
             match *mode {
                 Mode::Resources => locales_store.get(TK::NewResource),
-                Mode::Posts => locales_store.get(TK::NewBlogPost),
+                Mode::Blogs => locales_store.get(TK::NewBlogPost),
+                Mode::Projects => locales_store.get(TK::NewProject),
             }
         }},
         State::Loading => html! {
@@ -353,7 +407,7 @@ fn resource_list(props: &ResourceListProps) -> Html {
     };
     use_effect_with_deps(
         |new_element_input| {
-            if &**new_element_input != &State::Ok(true) {
+            if **new_element_input != State::Ok(true) {
                 return;
             }
             if let Some(input) = web_sys::window()

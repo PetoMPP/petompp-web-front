@@ -1,11 +1,16 @@
 __version: 1.0
 Home: Strona główna
-Projects: Projekty
 About: O mnie
 Contact: Kontakt
 Loading: Ładowanie
 Ok: Ok
 Cancel: Anuluj
+Insert: Wstaw
+InsertLink: Wstaw link
+InsertImage: Wstaw obraz
+Url: URL
+Text: Tekst
+Gallery: Galeria
 Save: Zapisz
 SaveChanges: Zapisz zmiany
 SaveChangesQuestion: Czy chcesz zapisać zmiany?
@@ -28,7 +33,6 @@ Activate: Aktywuj
 ActivateUserQuestion: Czy chcesz aktywować użytkownika %{0}?
 Delete: Usuń
 DeleteUserQuestion: Czy chcesz usunąć użytkownika %{0}?
-ProjectsDescription: Tutaj będę umieszczał swoje projekty.
 Edit: Edytuj
 Editing: Edycja
 Editor: Edytor
@@ -50,10 +54,16 @@ NewBlogPost: Nowy post
 BlogPosts: Posty
 BlogPostMetadata: Metadane postu
 BackToBlogPosts: "↩ powrót do postów.."
+Project: Projekt
+NewProject: Nowy projekt
+Projects: Projekty
+AllProjects: Wszystkie projekty
+ProjectMetadata: Metadane projektu
 Title: Tytuł
 Summary: Podsumowanie
 Tags: Tagi
 Image: Obraz
+Images: Obrazy
 DeleteDir: Usuń katalog
 DeleteDirQuestion: Czy chcesz usunąć katalog?
 EnterDirname: Wpisz nazwę katalogu..

@@ -26,7 +26,7 @@ impl Localizable for (&UsernameRequirements, &Vec<&str>) {
 }
 
 fn localize_errors(
-    errors: &Vec<&str>,
+    errors: &[&str],
     ur: &UsernameRequirements,
     locales: &super::store::LocalesStore,
 ) -> String {
