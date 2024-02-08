@@ -1,3 +1,4 @@
+pub mod carousel;
 pub mod collapse;
 pub mod date_display;
 pub mod flag;

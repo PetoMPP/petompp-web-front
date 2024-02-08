@@ -1,7 +1,6 @@
 use super::{localizable::Localizable, tk::TK};
 use petompp_web_models::error::{
-    AuthError, Error, QueryValidationError, ResourceDataValidationError, UserError,
-    ValidationError,
+    AuthError, Error, QueryValidationError, ResourceDataValidationError, UserError, ValidationError,
 };
 
 impl Localizable for Error {

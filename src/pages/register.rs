@@ -1,4 +1,6 @@
 use crate::api::client::ApiClient;
+use crate::api::settings::SettingsClient;
+use crate::api::user::UserClient;
 use crate::components::atoms::text_input::{InputType, TextInput};
 use crate::components::state::State;
 use crate::data::locales::localizable::Localizable;

@@ -1,8 +1,7 @@
 use crate::{
     async_event,
-    components::{
-        atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
-        state::State,
+    components::atoms::modal::{
+        show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore,
     },
     data::{
         locales::{store::LocalesStore, tk::TK},
@@ -24,8 +23,11 @@ pub fn discard_button(props: &EditorProps) -> Html {
     let (Some(resid), Some(lang)) = (&props.resid, &props.lang) else {
         return html! {};
     };
-    let State::Ok(Some((is_new, _, _))) = &props.state else {
-        return html! {};
+    let is_new = match &props.state {
+        EditorState::Ok(Some(state)) => state.is_new,
+        _ => {
+            return html! {};
+        }
     };
     if local_store.get(resid, lang.key()).is_none() {
         return html! {};
@@ -43,14 +45,14 @@ pub fn discard_button(props: &EditorProps) -> Html {
         }
     );
     let onclick = show_modal_callback(
-        ModalData {
-            title: locales_store.get(TK::DiscardChanges),
-            message: locales_store.get(TK::DiscardChangesQuestion),
+        ModalData::Dialog(DialogData {
+            title: TK::DiscardChanges,
+            message: TK::DiscardChangesQuestion,
             buttons: Buttons::RiskyCancel(
-                ModalButton::new(locales_store.get(TK::Discard), Some(onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), None),
+                ModalButton::new(TK::Discard, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
-        },
+        }),
         modal_dispatch.clone(),
     );
 

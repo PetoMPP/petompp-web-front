@@ -8,5 +8,6 @@ pub mod home;
 pub mod login;
 pub mod not_found;
 pub mod page_base;
+pub mod project;
 pub mod projects;
 pub mod register;

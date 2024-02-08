@@ -1,5 +1,5 @@
 use crate::{
-    api::{self, client::ApiClient},
+    api::{self, client::ApiClient, user::UserClient},
     async_event,
     components::atoms::{
         modal::show_error,

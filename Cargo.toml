@@ -13,12 +13,13 @@ opt-level = "z"
 async-std = "1.12"
 chrono = { version = "0.4", features = ["serde"] }
 deref-derive = "0.1"
+futures = "0.3"
 gloo = "0.10"
 lazy_static = "1.4"
 markdown = "1.0.0-alpha.12"
-petompp-web-models = { git = "https://github.com/PetoMPP/petompp-web-models.git", branch = "0.5.5", features = [
+petompp-web-models = { git = "https://github.com/PetoMPP/petompp-web-models.git", branch = "0.7.4", features = [
     "timeago",
-    "web-sys",
+    "wasm",
 ] }
 regex = "1.10"
 reqwasm = "0.5"
@@ -28,10 +29,12 @@ serde_yaml = "0.9"
 strum = { version = "0.25", features = ["derive"] }
 timeago = "0.4"
 wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = [
     "ClipboardEvent",
     "Crypto",
     "DataTransfer",
+    "HtmlImageElement",
     "HtmlInputElement",
     "HtmlDialogElement",
     "Navigator",
