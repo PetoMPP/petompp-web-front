@@ -53,7 +53,7 @@ pub fn markdown_display(props: &MarkdownDisplayProps) -> Html {
     use_effect_with_deps(
         |(interactive, id, navigator)| {
             if interactive.is_some() {
-                make_links_clickable(&navigator, id.as_str());
+                make_links_clickable(navigator, id.as_str());
             }
         },
         (interactive, id.clone(), navigator.clone()),
@@ -155,7 +155,7 @@ fn make_links_clickable(navigator: &Navigator, id: &str) {
         };
         match href {
             href if href.starts_with("http") => link.set_attribute("target", "_blank").unwrap(),
-            href if href.starts_with("/") => {
+            href if href.starts_with('/') => {
                 if let Some(onclick) = Route::get_onclick_from_str(href.as_str(), navigator.clone())
                 {
                     link.add_event_listener_with_callback(

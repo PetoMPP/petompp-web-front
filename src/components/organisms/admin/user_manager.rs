@@ -1,10 +1,10 @@
 use crate::{
-    api::client::ApiClient,
+    api::{client::ApiClient, user::UserClient},
     async_event,
     components::{
         atoms::{
             loading::Loading,
-            modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+            modal::{show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore},
         },
         state::State,
     },
@@ -132,14 +132,14 @@ fn activate_button(props: &UserRowProps) -> Html {
         ),
         false => (
             Some(show_modal_callback(
-                ModalData {
-                    title: locales_store.get(TK::Activate),
-                    message: locales_store.get(TK::ActivateUserQuestion(props.user.name.clone())),
+                ModalData::Dialog(DialogData {
+                    title: TK::Activate,
+                    message: TK::ActivateUserQuestion(props.user.name.clone()),
                     buttons: Buttons::ConfirmCancel(
-                        ModalButton::new(locales_store.get(TK::Activate), Some(onclick)),
-                        ModalButton::new(locales_store.get(TK::Cancel), None),
+                        ModalButton::new(TK::Activate, Some(onclick)),
+                        ModalButton::new(TK::Cancel, None),
                     ),
-                },
+                }),
                 dispatch.clone(),
             )),
             "btn btn-sm btn-success px-1 mr-1",
@@ -175,14 +175,14 @@ fn delete_button(props: &UserRowProps) -> Html {
         ),
         false => (
             Some(show_modal_callback(
-                ModalData {
-                    title: locales_store.get(TK::Delete),
-                    message: locales_store.get(TK::DeleteUserQuestion(props.user.name.clone())),
+                ModalData::Dialog(DialogData {
+                    title: TK::Delete,
+                    message: TK::DeleteUserQuestion(props.user.name.clone()),
                     buttons: Buttons::RiskyCancel(
-                        ModalButton::new(locales_store.get(TK::Delete), Some(onclick)),
-                        ModalButton::new(locales_store.get(TK::Cancel), None),
+                        ModalButton::new(TK::Delete, Some(onclick)),
+                        ModalButton::new(TK::Cancel, None),
                     ),
-                },
+                }),
                 dispatch.clone(),
             )),
             "btn btn-sm btn-warning px-1 mr-1",

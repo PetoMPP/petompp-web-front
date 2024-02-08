@@ -40,7 +40,6 @@ pub fn page_base(props: &PageBaseProps) -> Html {
                 true => "PetoMPP.NET".to_string(),
                 false => format!("{} - PetoMPP.NET", title),
             };
-            gloo::console::info!(format!("Setting title to {}", &title));
             web_sys::window()
                 .and_then(|w| w.document())
                 .unwrap()

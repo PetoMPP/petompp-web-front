@@ -1,16 +1,22 @@
 use strum::EnumIter;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Clone, EnumIter)]
+#[derive(Debug, Clone, PartialEq, EnumIter, Default)]
 pub enum TK {
+    #[default]
     __version,
     Home,
-    Projects,
     About,
     Contact,
     Loading,
     Ok,
     Cancel,
+    Insert,
+    InsertLink,
+    InsertImage,
+    Url,
+    Text,
+    Gallery,
     Save,
     SaveChanges,
     SaveChangesQuestion,
@@ -33,7 +39,6 @@ pub enum TK {
     ActivateUserQuestion(String),
     Delete,
     DeleteUserQuestion(String),
-    ProjectsDescription,
     Edit,
     Editing,
     Editor,
@@ -55,10 +60,16 @@ pub enum TK {
     BlogPosts,
     BlogPostMetadata,
     BackToBlogPosts,
+    Project,
+    NewProject,
+    Projects,
+    AllProjects,
+    ProjectMetadata,
     Title,
     Summary,
     Tags,
     Image,
+    Images,
     DeleteDir,
     DeleteDirQuestion,
     EnterDirname,

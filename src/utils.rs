@@ -66,6 +66,16 @@ pub mod js {
     use wasm_bindgen::JsCast;
     use web_sys::{Element, HtmlInputElement};
 
+    pub fn get_textarea(textarea_id: &str) -> HtmlInputElement {
+        web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .get_element_by_id(textarea_id)
+            .unwrap()
+            .unchecked_into()
+    }
+
     pub fn set_textarea_text(value: &str, id: &str) {
         let element: HtmlInputElement = web_sys::window()
             .unwrap()
@@ -98,5 +108,18 @@ pub mod js {
                 .unwrap();
         }
         body.set_attribute("style", "height: auto;").unwrap();
+    }
+
+    pub fn get_selection(element: &HtmlInputElement) -> (usize, usize) {
+        (
+            element
+                .selection_start()
+                .unwrap_or_default()
+                .unwrap_or_default() as usize,
+            element
+                .selection_end()
+                .unwrap_or_default()
+                .unwrap_or_default() as usize,
+        )
     }
 }

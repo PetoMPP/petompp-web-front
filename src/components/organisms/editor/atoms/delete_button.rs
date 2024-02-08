@@ -1,10 +1,16 @@
 use crate::{
-    api::client::{ApiClient, RequestError},
+    api::{
+        blob::BlobClient,
+        client::{ApiClient, RequestError},
+        resource::ResourceClient,
+    },
     async_event,
-    components::atoms::modal::{show_modal_callback, Buttons, ModalButton, ModalData, ModalStore},
+    components::atoms::modal::{
+        show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore,
+    },
     data::{
         locales::{store::LocalesStore, tk::TK},
-        resources::id::ResId,
+        resources::id::{BlobType, ResId},
         session::SessionStore,
     },
     pages::editor::{EditorProps, EditorState},
@@ -32,9 +38,8 @@ pub fn delete_button(props: &EditorProps) -> Html {
         return html! {};
     };
     match &props.state {
-        EditorState::Loading
-        | EditorState::Ok(None)
-        | EditorState::Ok(Some((Some(true), _, _))) => return Html::default(),
+        EditorState::Loading | EditorState::Ok(None) => return Html::default(),
+        EditorState::Ok(Some(state)) if state.is_new.unwrap_or(true) => return Html::default(),
         _ => {}
     }
     let onstatechange = &props.onstatechanged;
@@ -42,7 +47,10 @@ pub fn delete_button(props: &EditorProps) -> Html {
     let onclick = async_event!(|onstatechange, navigator, resid, lang, err, token| {
         onstatechange.emit(EditorState::Loading);
         match match resid {
-            ResId::Blob(id) => ApiClient::delete_post(&id, lang.key(), &token).await,
+            ResId::Blob(blob) => match blob {
+                BlobType::Blog(id) => ApiClient::delete(&token, "blog", &id).await,
+                BlobType::Project(id) => ApiClient::delete(&token, "project", &id).await,
+            },
             ResId::ResKey(id) => match lang {
                 Country::UnitedKingdom => ApiClient::delete_resource(&token, &id).await,
                 _ => ApiClient::delete_resource_lang(&token, &id, &lang).await,
@@ -53,14 +61,14 @@ pub fn delete_button(props: &EditorProps) -> Html {
         }
     });
     let onclick = show_modal_callback(
-        ModalData {
-            title: locales_store.get(TK::DeleteResource),
-            message: locales_store.get(TK::DeleteResourceQuestion),
+        ModalData::Dialog(DialogData {
+            title: TK::DeleteResource,
+            message: TK::DeleteResourceQuestion,
             buttons: Buttons::RiskyCancel(
-                ModalButton::new(locales_store.get(TK::Delete), Some(onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), None),
+                ModalButton::new(TK::Delete, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
-        },
+        }),
         modal_dispatch.clone(),
     );
     html! {

@@ -26,6 +26,7 @@ pub struct TextInputProps {
     pub label: String,
     pub itype: InputType,
     pub enabled: bool,
+    pub id: Option<String>,
     pub value: Option<String>,
     pub placeholder: Option<String>,
     pub autocomplete: Option<String>,
@@ -36,8 +37,12 @@ pub struct TextInputProps {
 #[function_component(TextInput)]
 pub fn text_input(props: &TextInputProps) -> Html {
     let id = use_memo(
-        |_| web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
-        (),
+        |id| {
+            id.clone().unwrap_or(
+                web_sys::window().unwrap().crypto().unwrap().random_uuid()[..10].to_string(),
+            )
+        },
+        props.id.clone(),
     );
     let (class, tooltip_class) = match &props.error {
         Some(_) => (
@@ -62,12 +67,7 @@ pub fn text_input(props: &TextInputProps) -> Html {
                     .and_then(|d| d.get_element_by_id(id.as_str()))
                     .and_then(|e| e.dyn_into::<HtmlInputElement>().ok())
                 {
-                    input.set_value(
-                        initial_state
-                            .as_ref()
-                            .map(|s| s.as_str())
-                            .unwrap_or_default(),
-                    );
+                    input.set_value(initial_state.as_deref().unwrap_or_default());
                 }
             },
             (),
@@ -133,15 +133,7 @@ pub fn textarea_input(props: &TextareaInputProps) -> Html {
         let id = id.clone();
         let initial_state = props.value.clone();
         use_effect_with_deps(
-            move |_| {
-                set_textarea_text(
-                    initial_state
-                        .as_ref()
-                        .map(|s| s.as_str())
-                        .unwrap_or_default(),
-                    &id,
-                )
-            },
+            move |_| set_textarea_text(initial_state.as_deref().unwrap_or_default(), &id),
             (),
         );
     }
