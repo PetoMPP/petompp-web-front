@@ -1,12 +1,11 @@
 use crate::{
     components::{
-        atoms::modal::{show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore},
+        atoms::modal::{
+            show_modal_callback, Buttons, DialogData, ModalButton, ModalData, ModalStore,
+        },
         organisms::menu::close_menu,
     },
-    data::{
-        locales::{store::LocalesStore, tk::TK},
-        session::SessionStore,
-    },
+    data::{locales::tk::TK, session::SessionStore},
     pages::login::LoginRedirect,
     router::{admin::AdminRoute, route::Route},
     utils::style::get_svg_bg_mask_style,
@@ -62,18 +61,17 @@ fn login_button() -> Html {
 fn logout_button() -> Html {
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (_, dispatch) = use_store::<ModalStore>();
-    let (locales_store, _) = use_store::<LocalesStore>();
     let onclick = Callback::from(move |_| {
         close_menu();
         session_dispatch.reduce(|_| SessionStore::default().into());
     });
     let onclick = show_modal_callback(
         ModalData::Dialog(DialogData {
-            title: locales_store.get(TK::Logout),
-            message: locales_store.get(TK::LogoutQuestion),
+            title: TK::Logout,
+            message: TK::LogoutQuestion,
             buttons: Buttons::RiskyCancel(
-                ModalButton::new(locales_store.get(TK::Logout), Some(onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), None),
+                ModalButton::new(TK::Logout, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
         }),
         dispatch,

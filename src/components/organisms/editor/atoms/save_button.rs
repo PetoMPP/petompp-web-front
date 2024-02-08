@@ -71,24 +71,16 @@ pub fn save_button(props: &EditorProps) -> Html {
         }
     });
     let (text, title, message) = match is_new {
-        true => (
-            locales_store.get(TK::Create),
-            locales_store.get(TK::CreateResource),
-            locales_store.get(TK::CreateResourceQuestion),
-        ),
-        false => (
-            locales_store.get(TK::Save),
-            locales_store.get(TK::SaveChanges),
-            locales_store.get(TK::SaveChangesQuestion),
-        ),
+        true => (TK::Create, TK::CreateResource, TK::CreateResourceQuestion),
+        false => (TK::Save, TK::SaveChanges, TK::SaveChangesQuestion),
     };
     let onclick = show_modal_callback(
         ModalData::Dialog(DialogData {
             title,
             message,
             buttons: Buttons::ConfirmCancel(
-                ModalButton::new(locales_store.get(TK::Save), Some(onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), None),
+                ModalButton::new(TK::Save, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
         }),
         modal_dispatch.clone(),
@@ -96,7 +88,7 @@ pub fn save_button(props: &EditorProps) -> Html {
 
     html! {
         <button class={"btn btn-success grow"} {onclick}>
-            {text}
+            {locales_store.get(text)}
         </button>
     }
 }

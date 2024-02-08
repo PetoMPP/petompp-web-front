@@ -17,9 +17,11 @@ use crate::{
         session::SessionStore,
     },
     pages::page_base::PageBase,
+    router::route::Route,
 };
 use petompp_web_models::models::blob::{markdown::MarkdownMeta, project::ProjectMetaData};
 use yew::{platform::spawn_local, prelude::*};
+use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
@@ -29,6 +31,7 @@ pub struct ProjectProps {
 
 #[function_component(Project)]
 pub fn project(props: &ProjectProps) -> Html {
+    let navigator = use_navigator().unwrap();
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (locales_store, _) = use_store::<LocalesStore>();
     let data = use_state(|| State::Ok(None));
@@ -57,12 +60,17 @@ pub fn project(props: &ProjectProps) -> Html {
         },
         (props.clone(), data.clone(), locales_store.clone()),
     );
-    let (markdown, title) = match &*data {
+    let (markdown, title, gallery) = match &*data {
         State::Ok(Some((m, md, _))) => (
             html! {<Markdown markdown={md.clone()} allowhtml={true} interactive={Some(())}/>},
             m.title().clone(),
+            html! {<ProjectGallery id={props.id.clone()} />},
         ),
-        State::Loading | State::Ok(None) => (html! { <Loading /> }, locales_store.get(TK::Loading)),
+        State::Loading | State::Ok(None) => (html! { <Loading /> }, locales_store.get(TK::Loading), html! {}),
+        State::Err(RequestError::Endpoint(404, _)) => {
+            navigator.push(&Route::Projects);
+            return html! {};
+        }
         State::Err(e) => {
             if let Err(redirect) = e.handle_failed_auth(session_dispatch) {
                 return redirect;
@@ -70,11 +78,12 @@ pub fn project(props: &ProjectProps) -> Html {
             (
                 html! {
                     <>
-                    <h3 class={"mx-auto py-4 text-xl font-semibold"}>{"Failed to load blog post!"}</h3>
+                    <h3 class={"mx-auto py-4 text-xl font-semibold text-error"}>{e.to_string()}</h3>
                     <p>{e.to_string()}</p>
                     </>
                 },
                 locales_store.get(TK::ErrorOccured),
+                html! {},
             )
         }
     };
@@ -83,7 +92,7 @@ pub fn project(props: &ProjectProps) -> Html {
             <EditButton resid={ResId::Blob(BlobType::Project(props.id.clone()))} />
             <div class={"mx-auto flex flex-col w-full"}>
                 {markdown}
-                <ProjectGallery id={props.id.clone()} />
+                {gallery}
             </div>
         </PageBase>
     }
@@ -123,7 +132,7 @@ pub fn project_gallery(props: &ProjectProps) -> Html {
             }
             html! {
                 <>
-                <h3 class={"mx-auto py-4 text-xl font-semibold"}>{"Failed to load gallery!"}</h3>
+                <h3 class={"mx-auto py-4 text-xl font-semibold text-error"}>{e.to_string()}</h3>
                 <p>{e.to_string()}</p>
                 </>
             }
@@ -144,7 +153,7 @@ pub fn project_gallery(props: &ProjectProps) -> Html {
     html! {
         <>
         <div class={"prose pb-8"}>
-            <h2>{"Gallery"}</h2>
+            <h2>{locales_store.get(TK::Gallery)}</h2>
         </div>
         {inner}
         </>

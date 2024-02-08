@@ -1,7 +1,10 @@
 use super::command::{insert_after_selection, EditorCommand};
-use crate::components::atoms::modal::{
-    show_modal_callback, Buttons, FormData, FormField, ModalButton, ModalData, ModalStore,
-    MODAL_FIELD_PREFIX,
+use crate::{
+    components::atoms::modal::{
+        show_modal_callback, Buttons, FormData, FormField, ModalButton, ModalData, ModalStore,
+        MODAL_FIELD_PREFIX,
+    },
+    data::locales::tk::TK,
 };
 use deref_derive::Deref;
 use wasm_bindgen::JsCast;
@@ -57,20 +60,22 @@ impl EditorCommand for LinkCommand {
             cb.emit(insert_after_selection(id.as_str(), &link));
         });
         let modal_data = ModalData::Form(FormData {
-            title: "Insert Link".to_string(),
+            title: TK::InsertLink,
             fields: vec![
                 FormField {
-                    label: "URL".to_string(),
+                    id: "URL".to_string(),
+                    label: TK::Url,
                     required: true,
                 },
                 FormField {
-                    label: "Text".to_string(),
+                    id: "Text".to_string(),
+                    label: TK::Text,
                     required: false,
                 },
             ],
             buttons: Buttons::ConfirmCancel(
-                ModalButton::new("insert".to_string(), Some(onclick)),
-                ModalButton::new("cancel".to_string(), None),
+                ModalButton::new(TK::Insert, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
         });
         show_modal_callback(modal_data, modal_dispatch)

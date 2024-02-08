@@ -1,5 +1,5 @@
 use deref_derive::{Deref, DerefMut};
-use std::time::Duration;
+use std::{rc::Rc, time::Duration};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDialogElement, HtmlElement};
@@ -19,16 +19,13 @@ use crate::{
 
 #[derive(PartialEq, Clone)]
 pub struct ModalButton {
-    pub text: String,
+    pub text_key: TK,
     pub onclick: Option<Callback<MouseEvent>>,
 }
 
 impl ModalButton {
-    pub fn new(text: impl Into<String>, onclick: Option<Callback<MouseEvent>>) -> Self {
-        Self {
-            text: text.into(),
-            onclick,
-        }
+    pub fn new(text_key: TK, onclick: Option<Callback<MouseEvent>>) -> Self {
+        Self { text_key, onclick }
     }
 }
 
@@ -41,7 +38,7 @@ pub enum Buttons {
 
 impl Default for Buttons {
     fn default() -> Self {
-        Self::Confirm(ModalButton::new("OK", None))
+        Self::Confirm(ModalButton::new(TK::Ok, None))
     }
 }
 
@@ -64,21 +61,22 @@ impl Default for ModalData {
 
 #[derive(PartialEq, Clone, Default)]
 pub struct DialogData {
-    pub title: String,
-    pub message: String,
+    pub title: TK,
+    pub message: TK,
     pub buttons: Buttons,
 }
 
 #[derive(PartialEq, Clone, Default)]
 pub struct FormData {
-    pub title: String,
+    pub title: TK,
     pub fields: Vec<FormField>,
     pub buttons: Buttons,
 }
 
 #[derive(PartialEq, Clone, Default)]
 pub struct FormField {
-    pub label: String,
+    pub id: String,
+    pub label: TK,
     pub required: bool,
 }
 
@@ -136,20 +134,21 @@ pub fn modal() -> Html {
 
 #[derive(Clone, PartialEq, Properties)]
 struct DialogModalProps {
-    pub title: String,
-    pub message: String,
+    pub title: TK,
+    pub message: TK,
     pub buttons: Buttons,
 }
 
 #[function_component(DialogModal)]
 fn dialog_modal(props: &DialogModalProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     html! {
         <dialog id={MODAL_ID} class={"modal z-80"}>
         <form method={"dialog"} class={"modal-box"}>
-            <h3 class={"font-bold text-lg"}>{&props.title}</h3>
-            <p class={"py-4"}>{&props.message}</p>
+            <h3 class={"font-bold text-lg"}>{locales_store.get(props.title.clone())}</h3>
+            <p class={"py-4"}>{locales_store.get(props.message.clone())}</p>
             <div class={"flex flex-row-reverse justify-between"}>
-                {get_buttons(&props.buttons)}
+                {get_buttons(&props.buttons, locales_store)}
             </div>
         </form>
         </dialog>
@@ -160,27 +159,28 @@ pub const MODAL_FIELD_PREFIX: &str = "modal-form-field-";
 
 #[derive(Clone, PartialEq, Properties)]
 struct FormModalProps {
-    pub title: String,
+    pub title: TK,
     pub fields: Vec<FormField>,
     pub buttons: Buttons,
 }
 
 #[function_component(FormModal)]
 fn form_modal(props: &FormModalProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let fields = props.fields.clone().into_iter().map(|f| {
         html! {
-            <TextInput itype={InputType::Text} enabled={true} id={Some(format!("{}{}", MODAL_FIELD_PREFIX, &f.label))} label={f.label} />
+            <TextInput itype={InputType::Text} enabled={true} id={Some(format!("{}{}", MODAL_FIELD_PREFIX, &f.id))} label={locales_store.get(f.label)} />
         }
     });
     html! {
         <dialog id={MODAL_ID} class={"modal z-80"}>
         <form method={"dialog"} class={"modal-box overflow-visible"}>
-            <h3 class={"font-bold text-lg"}>{&props.title}</h3>
+            <h3 class={"font-bold text-lg"}>{locales_store.get(props.title.clone())}</h3>
             <div class={"py-4"}>
                 {for fields}
             </div>
             <div class={"flex flex-row-reverse justify-between"}>
-                {get_buttons(&props.buttons)}
+                {get_buttons(&props.buttons, locales_store)}
             </div>
         </form>
         </dialog>
@@ -194,6 +194,7 @@ struct ImageSelectorModalProps {
 
 #[function_component(ImageSelectorModal)]
 fn image_selector_modal(props: &ImageSelectorModalProps) -> Html {
+    let (locales_store, _) = use_store::<LocalesStore>();
     let data = use_state(|| None);
     let ondatachanged = {
         let data = data.clone();
@@ -215,7 +216,7 @@ fn image_selector_modal(props: &ImageSelectorModalProps) -> Html {
             <div class={"modal-box overflow-visible flex flex-col gap-2"}>
                 <BlobImageSelect id={format!("{}src", MODAL_FIELD_PREFIX)} container={"image-upload".to_string()} {ondatachanged} data={(*data).clone()}/>
                 <div class={"flex flex-row-reverse justify-between"}>
-                    {get_buttons(&props.buttons)}
+                    {get_buttons(&props.buttons, locales_store)}
                 </div>
             </div>
         </dialog>
@@ -349,12 +350,12 @@ fn get_close_callback(id: &str) -> Callback<MouseEvent> {
     })
 }
 
-fn get_buttons(buttons: &Buttons) -> Html {
+fn get_buttons(buttons: &Buttons, locales_store: Rc<LocalesStore>) -> Html {
     match buttons.clone() {
         Buttons::Confirm(button) => {
             let onclick = into_modal_onclick(button.onclick);
             html! {
-                <button class="btn btn-primary" {onclick}>{&button.text}</button>
+                <button class="btn btn-primary" {onclick}>{locales_store.get(button.text_key)}</button>
             }
         }
         Buttons::ConfirmCancel(confirm_button, cancel_button) => {
@@ -362,8 +363,8 @@ fn get_buttons(buttons: &Buttons) -> Html {
             let cancel_onclick = into_modal_onclick(cancel_button.onclick);
             html! {
                 <>
-                <button class="btn btn-neutral" onclick={cancel_onclick}>{&cancel_button.text}</button>
-                <button class="btn btn-primary" onclick={confirm_onclick}>{&confirm_button.text}</button>
+                <button class="btn btn-neutral" onclick={cancel_onclick}>{locales_store.get(cancel_button.text_key)}</button>
+                <button class="btn btn-primary" onclick={confirm_onclick}>{locales_store.get(confirm_button.text_key)}</button>
                 </>
             }
         }
@@ -372,8 +373,8 @@ fn get_buttons(buttons: &Buttons) -> Html {
             let cancel_onclick = into_modal_onclick(cancel_button.onclick);
             html! {
                 <>
-                <button class="btn btn-neutral" onclick={cancel_onclick}>{&cancel_button.text}</button>
-                <button class="btn btn-error" onclick={risky_onclick}>{&risky_button.text}</button>
+                <button class="btn btn-neutral" onclick={cancel_onclick}>{locales_store.get(cancel_button.text_key)}</button>
+                <button class="btn btn-error" onclick={risky_onclick}>{locales_store.get(risky_button.text_key)}</button>
                 </>
             }
         }

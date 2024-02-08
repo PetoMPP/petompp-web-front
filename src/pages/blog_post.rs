@@ -79,7 +79,7 @@ pub fn blog_post(props: &BlogPostProps) -> Html {
             (
                 html! {
                     <>
-                    <h3 class={"mx-auto py-4 text-xl font-semibold"}>{"Failed to load blog post!"}</h3>
+                    <h3 class={"mx-auto py-4 text-xl font-semibold text-error"}>{e.to_string()}</h3>
                     <p>{e.to_string()}</p>
                     </>
                 },

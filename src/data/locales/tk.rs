@@ -1,8 +1,9 @@
 use strum::EnumIter;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Clone, EnumIter)]
+#[derive(Debug, Clone, PartialEq, EnumIter, Default)]
 pub enum TK {
+    #[default]
     __version,
     Home,
     About,
@@ -10,6 +11,12 @@ pub enum TK {
     Loading,
     Ok,
     Cancel,
+    Insert,
+    InsertLink,
+    InsertImage,
+    Url,
+    Text,
+    Gallery,
     Save,
     SaveChanges,
     SaveChangesQuestion,

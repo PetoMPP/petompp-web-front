@@ -46,11 +46,11 @@ pub fn discard_button(props: &EditorProps) -> Html {
     );
     let onclick = show_modal_callback(
         ModalData::Dialog(DialogData {
-            title: locales_store.get(TK::DiscardChanges),
-            message: locales_store.get(TK::DiscardChangesQuestion),
+            title: TK::DiscardChanges,
+            message: TK::DiscardChangesQuestion,
             buttons: Buttons::RiskyCancel(
-                ModalButton::new(locales_store.get(TK::Discard), Some(onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), None),
+                ModalButton::new(TK::Discard, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
         }),
         modal_dispatch.clone(),

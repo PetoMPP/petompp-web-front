@@ -4,6 +4,7 @@ use crate::{
     components::atoms::modal::{
         show_modal_callback, Buttons, ModalButton, ModalData, ModalStore, MODAL_FIELD_PREFIX,
     },
+    data::locales::tk::TK,
 };
 use deref_derive::Deref;
 use wasm_bindgen::JsCast;
@@ -53,8 +54,8 @@ impl EditorCommand for ImageCommand {
             cb.emit(insert_after_selection(&id, &image));
         });
         let modal_data = ModalData::ImageSelector(Buttons::ConfirmCancel(
-            ModalButton::new("insert", Some(onclick)),
-            ModalButton::new("cancel", None),
+            ModalButton::new(TK::Insert, Some(onclick)),
+            ModalButton::new(TK::Cancel, None),
         ));
         show_modal_callback(modal_data, modal_dispatch)
     }

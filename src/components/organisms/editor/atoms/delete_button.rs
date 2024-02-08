@@ -62,11 +62,11 @@ pub fn delete_button(props: &EditorProps) -> Html {
     });
     let onclick = show_modal_callback(
         ModalData::Dialog(DialogData {
-            title: locales_store.get(TK::DeleteResource),
-            message: locales_store.get(TK::DeleteResourceQuestion),
+            title: TK::DeleteResource,
+            message: TK::DeleteResourceQuestion,
             buttons: Buttons::RiskyCancel(
-                ModalButton::new(locales_store.get(TK::Delete), Some(onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), None),
+                ModalButton::new(TK::Delete, Some(onclick)),
+                ModalButton::new(TK::Cancel, None),
             ),
         }),
         modal_dispatch.clone(),

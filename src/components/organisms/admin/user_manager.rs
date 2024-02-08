@@ -133,11 +133,11 @@ fn activate_button(props: &UserRowProps) -> Html {
         false => (
             Some(show_modal_callback(
                 ModalData::Dialog(DialogData {
-                    title: locales_store.get(TK::Activate),
-                    message: locales_store.get(TK::ActivateUserQuestion(props.user.name.clone())),
+                    title: TK::Activate,
+                    message: TK::ActivateUserQuestion(props.user.name.clone()),
                     buttons: Buttons::ConfirmCancel(
-                        ModalButton::new(locales_store.get(TK::Activate), Some(onclick)),
-                        ModalButton::new(locales_store.get(TK::Cancel), None),
+                        ModalButton::new(TK::Activate, Some(onclick)),
+                        ModalButton::new(TK::Cancel, None),
                     ),
                 }),
                 dispatch.clone(),
@@ -176,11 +176,11 @@ fn delete_button(props: &UserRowProps) -> Html {
         false => (
             Some(show_modal_callback(
                 ModalData::Dialog(DialogData {
-                    title: locales_store.get(TK::Delete),
-                    message: locales_store.get(TK::DeleteUserQuestion(props.user.name.clone())),
+                    title: TK::Delete,
+                    message: TK::DeleteUserQuestion(props.user.name.clone()),
                     buttons: Buttons::RiskyCancel(
-                        ModalButton::new(locales_store.get(TK::Delete), Some(onclick)),
-                        ModalButton::new(locales_store.get(TK::Cancel), None),
+                        ModalButton::new(TK::Delete, Some(onclick)),
+                        ModalButton::new(TK::Cancel, None),
                     ),
                 }),
                 dispatch.clone(),

@@ -46,6 +46,9 @@ pub fn carousel(props: &CarouselProps) -> Html {
         .parse()
         .unwrap_or_default();
     let slide_cnt = props.slides.len();
+    if slide_cnt == 0 {
+        return html! {};
+    }
     let slides = props.slides.iter().enumerate().map(|(i, s)| {
         let id_base = (*id_base)[1..].to_string();
         let onclick = s.onclick.clone();

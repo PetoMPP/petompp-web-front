@@ -462,28 +462,25 @@ pub fn blob_browser_dialog(props: &BlobBrowserDialogProps) -> Html {
         selected.set(None);
         onforceopenchanged.emit(false);
     });
-    let (title, message) = match &*selected {
-        Some(BrowseItem::Dir(_)) => (
-            locales_store.get(TK::DeleteDir),
-            locales_store.get(TK::DeleteDirQuestion),
-        ),
-        Some(BrowseItem::File(_)) => (
-            locales_store.get(TK::DeleteFile),
-            locales_store.get(TK::DeleteFileQuestion),
-        ),
-        None => (String::new(), String::new()),
+    let title_message = match &*selected {
+        Some(BrowseItem::Dir(_)) => Some((TK::DeleteDir, TK::DeleteDirQuestion)),
+        Some(BrowseItem::File(_)) => Some((TK::DeleteFile, TK::DeleteFileQuestion)),
+        None => None,
     };
-    let delete_onclick = enable_force_open.clone().merge(show_modal_callback(
-        ModalData::Dialog(DialogData {
-            title,
-            message,
-            buttons: Buttons::RiskyCancel(
-                ModalButton::new(locales_store.get(TK::Delete), Some(delete_onclick)),
-                ModalButton::new(locales_store.get(TK::Cancel), Some(disable_force_open)),
-            ),
-        }),
-        modal_dispatch,
-    ));
+    let delete_onclick = match title_message {
+        Some((title, message)) => enable_force_open.clone().merge(show_modal_callback(
+            ModalData::Dialog(DialogData {
+                title,
+                message,
+                buttons: Buttons::RiskyCancel(
+                    ModalButton::new(TK::Delete, Some(delete_onclick)),
+                    ModalButton::new(TK::Cancel, Some(disable_force_open)),
+                ),
+            }),
+            modal_dispatch,
+        )),
+        None => Callback::noop(),
+    };
     let buttons = match &*state {
         State::Ok(_) => {
             let add_dir = match props.config.readonly {

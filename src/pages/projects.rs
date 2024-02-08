@@ -2,7 +2,10 @@ use crate::{
     api::{blob::BlobClient, client::ApiClient},
     components::{
         atoms::{
-            carousel::{Carousel, Slide}, link::RouteLink, loading::Loading, markdown::Editable
+            carousel::{Carousel, Slide},
+            link::RouteLink,
+            loading::Loading,
+            markdown::Editable,
         },
         state::State,
     },
@@ -23,21 +26,28 @@ pub fn projects() -> Html {
     let navigator = use_navigator().unwrap();
     let (locales_store, _) = use_store::<LocalesStore>();
     let state = use_state(|| State::Ok(None));
+    let prev = use_state(|| locales_store.curr);
     use_effect_with_deps(
-        |state| {
+        |(state, curr, prev)| {
             match &**state {
-                State::Ok(Some(_)) | State::Loading | State::Err(_) => return,
+                State::Ok(Some(_)) | State::Loading | State::Err(_) if *curr == **prev => return,
                 _ => state.set(State::Loading),
             }
             let state = state.clone();
+            let curr = *curr;
+            prev.set(curr);
             spawn_local(async move {
                 match ApiClient::get_meta_all::<ProjectMetaData>("project", None).await {
-                    Ok(m) => state.set(State::Ok(Some(m))),
+                    Ok(m) => state.set(State::Ok(Some(
+                        m.into_iter()
+                            .filter(|m| m.lang() == curr)
+                            .collect::<Vec<_>>(),
+                    ))),
                     Err(e) => state.set(State::Err(e)),
                 }
             })
         },
-        state.clone(),
+        (state.clone(), locales_store.curr, prev.clone()),
     );
 
     // TODO: Top 3 most viewed + most recent
