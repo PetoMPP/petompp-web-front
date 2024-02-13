@@ -15,7 +15,6 @@ pub struct BlogSummaryProps {
 
 #[function_component(BlogSummary)]
 pub fn blog_summary(props: &BlogSummaryProps) -> Html {
-    let navigator = use_navigator().unwrap();
     let tags = props
         .meta
         .tags
@@ -28,31 +27,30 @@ pub fn blog_summary(props: &BlogSummaryProps) -> Html {
         img => <ApiClient as BlobClient>::get_url("image-upload", img),
     };
     let id = props.meta.id().to_string();
-    let onclick = Callback::from(move |_| navigator.push(&Route::BlogPost { id: id.to_string() }));
 
     html! {
-    <div class={"card card-side bg-base-200 cursor-pointer"} {onclick}>
-        <div class={"card-body pt-4 z-10"}>
-            <div class={"flex flex-col gap-4 lg:gap-2"}>
-                <div class={"flex flex-row justify-start"}>
-                    <div class={"flex flex-row gap-2 flex-wrap"}>
-                    {for tags}
+        <Link<Route> classes={"card card-side bg-base-200 cursor-pointer"} to={Route::BlogPost { id: id.to_string() }}>
+            <div class={"card-body pt-4 z-10"}>
+                <div class={"flex flex-col gap-4 lg:gap-2"}>
+                    <div class={"flex flex-row justify-start"}>
+                        <div class={"flex flex-row gap-2 flex-wrap"}>
+                        {for tags}
+                        </div>
+                    </div>
+                    <h2 class={"text-2xl my-2 lg:my-0 font-semibold"}>{&props.meta.title()}</h2>
+                    <div class={"flex lg:flex-row flex-col gap-1 cursor-default"}>
+                        <CreatedDateDisplay date={*props.meta.created} />
+                        <UpdatedDateDisplay date={*props.meta.updated} />
                     </div>
                 </div>
-                <h2 class={"text-2xl my-2 lg:my-0 font-semibold"}>{&props.meta.title()}</h2>
-                <div class={"flex lg:flex-row flex-col gap-1 cursor-default"}>
-                    <CreatedDateDisplay date={*props.meta.created} />
-                    <UpdatedDateDisplay date={*props.meta.updated} />
+                    <div class={"flex flex-col"}>
+                        <div class={"divider mt-0"}/>
+                        <p>{&props.meta.summary()}</p>
+                    </div>
                 </div>
-            </div>
-                <div class={"flex flex-col"}>
-                    <div class={"divider mt-0"}/>
-                    <p>{&props.meta.summary()}</p>
-                </div>
-            </div>
-        <figure class={"absolute z-0 right-0 h-full w-2/3 object-fill pointer-events-none"} {style}>
-            <img class={"rounded-xl min-h-full"} src={img}/>
-        </figure>
-      </div>
+            <figure class={"absolute z-0 right-0 h-full w-2/3 object-fill pointer-events-none"} {style}>
+                <img class={"rounded-xl min-h-full"} src={img}/>
+            </figure>
+        </Link<Route>>
     }
 }
