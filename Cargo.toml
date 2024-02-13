@@ -38,6 +38,7 @@ web-sys = { version = "0.3", features = [
     "HtmlInputElement",
     "HtmlDialogElement",
     "Navigator",
+    "MediaQueryList",
 ] }
 yew = { version = "0.20", features = ["csr"] }
 yew-router = "0.17"
