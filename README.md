@@ -1,6 +1,6 @@
 # Main PetoMPP webpage frontend
 
-This is the repository containing the source code and deployments workflows for my webpage's frontend at: https://petompp.net/.
+This is the repository containing the source code and deployments workflows for my webpage's frontend at: https://peto-main.azurewebsites.net/.
 
 ## Used technologies
 
@@ -93,7 +93,7 @@ Also some of the `<a>` elements contained have to be adjusted so local hrefs do 
 ### Resources editor
 
 Although hidden for non-admin users, there's an editor built into the app for the pages content and blog posts.
-For the time being it is only accessible by navigating directly to it at https://petompp.net/editor.
+For the time being it is only accessible by navigating directly to it at https://peto-main.azurewebsites.net/editor.
 
 The editor features caching local changes saving and update of webpage resources and blog posts, including their metadata like tags, summary and splash image.
 In Blog meta editor user can select and upload images on Azure blob stroage with a nice UI.
